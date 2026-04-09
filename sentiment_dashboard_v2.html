@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Consumer Sentiment &amp; Spending Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+<style>
+/* ── Reset ── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+/* ── Design Tokens ── */
+:root{
+  --bg:#f0f4f8;
+  --surface:#ffffff;
+  --card:#ffffff;
+  --border:#e2e8f0;
+  --border-light:#f1f5f9;
+  --accent:#2563eb;
+  --accent-hover:#1d4ed8;
+  --accent-bg:#eff6ff;
+  --accent-mid:#bfdbfe;
+  --green:#059669;
+  --green-bg:#ecfdf5;
+  --amber:#d97706;
+  --amber-bg:#fffbeb;
+  --red:#dc2626;
+  --red-bg:#fef2f2;
+  --text:#0f172a;
+  --text-2:#334155;
+  --muted:#64748b;
+  --muted-2:#94a3b8;
+  --shadow-xs:0 1px 2px rgba(15,23,42,.04);
+  --shadow-sm:0 1px 3px rgba(15,23,42,.06),0 1px 2px rgba(15,23,42,.04);
+  --shadow-md:0 4px 16px rgba(15,23,42,.07),0 2px 6px rgba(15,23,42,.04);
+  --shadow-lg:0 12px 40px rgba(15,23,42,.09),0 4px 12px rgba(15,23,42,.05);
+  --r:16px;--r-sm:10px;--r-xs:6px;
+  --font:'Inter',system-ui,sans-serif;
+}
+
+/* ── Base ── */
+body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
+.wrap{max-width:1320px;margin:0 auto;padding:2rem 2rem 4rem;}
+
+/* ── Header ── */
+.hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;padding:1.25rem 1.75rem;background:var(--surface);border-radius:var(--r);box-shadow:var(--shadow-sm);border:1px solid var(--border);}
+.hdr-brand{display:flex;align-items:center;gap:0.875rem;}
+.hdr-icon{width:40px;height:40px;background:linear-gradient(135deg,#2563eb 0%,#7c3aed 100%);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 4px 12px rgba(37,99,235,.3);}
+.hdr-icon svg{width:20px;height:20px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+.hdr-title{font-size:1.05rem;font-weight:700;letter-spacing:-0.025em;color:var(--text);}
+.hdr-sub{font-size:0.71rem;color:var(--muted);margin-top:2px;font-weight:400;}
+.hdr-right{display:flex;align-items:center;gap:1.5rem;}
+.live-badge{display:flex;align-items:center;gap:6px;font-size:0.71rem;font-weight:600;color:var(--green);background:var(--green-bg);padding:0.3rem 0.75rem;border-radius:100px;border:1px solid rgba(5,150,105,.18);}
+.live-dot{width:6px;height:6px;background:var(--green);border-radius:50%;animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.35}}
+.hdr-meta{font-size:0.71rem;color:var(--muted);text-align:right;line-height:1.5;}
+.hdr-meta strong{color:var(--text-2);display:block;font-weight:600;font-size:0.73rem;}
+
+/* ── Navigation ── */
+.nav{display:flex;justify-content:center;margin-bottom:1.75rem;}
+.nav-inner{background:var(--surface);border:1px solid var(--border);border-radius:100px;padding:5px;display:flex;gap:4px;box-shadow:var(--shadow-xs);}
+.tab{background:none;border:none;color:var(--muted);padding:0.5rem 1.25rem;border-radius:100px;cursor:pointer;font-family:var(--font);font-size:0.79rem;font-weight:600;letter-spacing:-0.01em;transition:all 0.18s ease;white-space:nowrap;}
+.tab:hover{color:var(--text);background:var(--border-light);}
+.tab.on{background:var(--accent);color:#fff;box-shadow:0 2px 8px rgba(37,99,235,.32);}
+
+/* ── Section Header ── */
+.section-hdr{margin-bottom:1.25rem;}
+.section-hdr h2{font-size:1rem;font-weight:700;letter-spacing:-0.02em;color:var(--text);}
+.section-hdr p{font-size:0.78rem;color:var(--muted);margin-top:4px;font-weight:400;max-width:680px;line-height:1.6;}
+
+/* ── KPI Cards ── */
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:1.125rem;margin-bottom:1.25rem;}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:1.375rem 1.5rem;position:relative;overflow:hidden;transition:box-shadow 0.2s,transform 0.2s;cursor:default;box-shadow:var(--shadow-sm);}
+.kpi:hover{box-shadow:var(--shadow-md);transform:translateY(-1px);}
+.kpi-stripe{position:absolute;top:0;left:0;right:0;height:3px;border-radius:var(--r) var(--r) 0 0;}
+.kpi-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:0.875rem;}
+.kpi-lbl{font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);line-height:1.4;padding-top:2px;}
+.kpi-icon{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;}
+.kpi-val{font-size:2.25rem;font-weight:800;letter-spacing:-0.04em;line-height:1;margin-bottom:0.625rem;}
+.divider{height:1px;background:var(--border-light);margin:0.5rem 0 0.625rem;}
+.kpi-footer{display:flex;align-items:flex-start;gap:0.5rem;flex-wrap:wrap;}
+.kpi-desc{font-size:0.71rem;color:var(--muted);line-height:1.55;flex:1;min-width:120px;}
+.kpi-badge{display:inline-flex;align-items:center;gap:3px;font-size:0.67rem;font-weight:700;padding:2px 9px;border-radius:100px;white-space:nowrap;flex-shrink:0;}
+.kpi-badge.up{background:var(--green-bg);color:var(--green);border:1px solid rgba(5,150,105,.2);}
+.kpi-badge.warn{background:var(--amber-bg);color:var(--amber);border:1px solid rgba(217,119,6,.2);}
+.kpi-badge.down{background:var(--red-bg);color:var(--red);border:1px solid rgba(220,38,38,.2);}
+.kpi-badge.neutral{background:var(--accent-bg);color:var(--accent);border:1px solid var(--accent-mid);}
+
+/* ── Cards ── */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:1.5rem;margin-bottom:1.25rem;box-shadow:var(--shadow-sm);}
+.card-head{margin-bottom:1.125rem;}
+.card-title{font-size:0.9rem;font-weight:700;letter-spacing:-0.02em;color:var(--text);}
+.card-subtitle{font-size:0.74rem;color:var(--muted);margin-top:5px;line-height:1.6;font-weight:400;max-width:820px;}
+
+/* ── Legend Pills ── */
+.legend-row{display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:1rem;}
+.leg{display:inline-flex;align-items:center;gap:7px;font-size:0.71rem;font-weight:500;color:var(--text-2);background:var(--border-light);padding:4px 12px 4px 9px;border-radius:100px;border:1px solid var(--border);}
+.leg-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.leg-line{width:22px;height:3px;border-radius:2px;flex-shrink:0;}
+
+/* ── Insight Box ── */
+.insight{background:linear-gradient(135deg,#eff6ff 0%,#f5f3ff 100%);border:1px solid #c7d2fe;border-radius:var(--r-sm);padding:1.125rem 1.375rem;margin-top:1.25rem;}
+.insight-label{display:inline-flex;align-items:center;gap:5px;font-size:0.64rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--accent);margin-bottom:0.5rem;}
+.insight-label svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2.5;}
+.insight p{font-size:0.82rem;line-height:1.75;color:var(--text-2);}
+.insight strong{color:var(--accent);font-weight:600;}
+.insight-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-top:1rem;}
+.insight-stat{background:rgba(255,255,255,.75);border:1px solid rgba(37,99,235,.13);border-radius:9px;padding:0.75rem 1rem;}
+.insight-stat .val{font-size:1.3rem;font-weight:800;color:var(--text);letter-spacing:-0.03em;}
+.insight-stat .lbl{font-size:0.68rem;color:var(--muted);margin-top:2px;font-weight:500;}
+
+/* ── How-to-Read box ── */
+.htr{background:#fffbeb;border:1px solid rgba(217,119,6,.22);border-radius:var(--r-sm);padding:0.875rem 1.125rem;margin-bottom:1.125rem;display:flex;gap:0.75rem;align-items:flex-start;}
+.htr-icon{font-size:1rem;flex-shrink:0;margin-top:1px;}
+.htr p{font-size:0.76rem;color:#92400e;line-height:1.65;}
+.htr strong{color:#78350f;font-weight:600;}
+
+/* ── Event Tags ── */
+.event-tags{display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.875rem;}
+.etag{display:inline-flex;align-items:center;gap:5px;font-size:0.67rem;font-weight:600;padding:3px 10px;border-radius:100px;border:1px solid;}
+.etag.recession{background:#fef2f2;color:#991b1b;border-color:#fecaca;}
+.etag.event{background:var(--accent-bg);color:var(--accent);border-color:var(--accent-mid);}
+
+/* ── Page transitions ── */
+.pg{display:none;animation:fadeUp 0.28s ease;}
+.pg.on{display:block;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── Footer ── */
+footer{margin-top:2rem;padding:1.125rem 1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--shadow-xs);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;}
+.foot-left{font-size:0.71rem;color:var(--muted);line-height:1.6;}
+.foot-left strong{color:var(--text-2);font-weight:600;display:block;margin-bottom:2px;font-size:0.73rem;}
+.foot-right{display:flex;align-items:center;gap:0.5rem;font-size:0.71rem;font-weight:600;color:var(--text-2);}
+.foot-dot{width:4px;height:4px;background:var(--muted-2);border-radius:50%;}
+
+/* ── Responsive ── */
+@media(max-width:900px){.kpis{grid-template-columns:1fr 1fr;}}
+@media(max-width:640px){
+  .kpis{grid-template-columns:1fr;}
+  .hdr{flex-direction:column;align-items:flex-start;gap:1rem;}
+  .hdr-right{width:100%;justify-content:space-between;}
+  .wrap{padding:1rem 1rem 3rem;}
+  .insight-grid{grid-template-columns:1fr;}
+  .nav-inner{gap:2px;}
+  .tab{padding:0.45rem 0.875rem;font-size:0.75rem;}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- HEADER -->
+  <header class="hdr">
+    <div class="hdr-brand">
+      <div class="hdr-icon">
+        <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+      </div>
+      <div>
+        <div class="hdr-title">Consumer Sentiment &amp; Spending Intelligence</div>
+        <div class="hdr-sub">United States &nbsp;·&nbsp; 2000 – 2026 &nbsp;·&nbsp; FRED &nbsp;·&nbsp; BLS &nbsp;·&nbsp; University of Michigan</div>
+      </div>
+    </div>
+    <div class="hdr-right">
+      <div class="live-badge"><span class="live-dot"></span>Live Data</div>
+      <div class="hdr-meta"><strong>Last Updated</strong>April 07, 2026</div>
+    </div>
+  </header>
+
+  <!-- NAVIGATION -->
+  <nav class="nav">
+    <div class="nav-inner">
+      <button class="tab on" onclick="go('p1',this)">&#x1F4CA; Macro Overview</button>
+      <button class="tab" onclick="go('p2',this)">&#x1F4C8; Spending by Category</button>
+      <button class="tab" onclick="go('p3',this)">&#x1F465; Income Comparison</button>
+    </div>
+  </nav>
+
+  <!-- PAGE 1 : MACRO OVERVIEW -->
+  <div id="p1" class="pg on">
+    <div class="section-hdr">
+      <h2>Macro Overview &#8212; How does Consumer Confidence compare to Actual Spending?</h2>
+      <p>The Sentiment Index measures how optimistic Americans feel about the economy (0&#8211;100 scale; higher = more confident). PCE tracks what they actually spend each month. When these two diverge, it often signals a turning point in the economy.</p>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi">
+        <div class="kpi-stripe" style="background:linear-gradient(90deg,#2563eb,#7c3aed)"></div>
+        <div class="kpi-header">
+          <div class="kpi-lbl">Current Sentiment Index</div>
+          <div class="kpi-icon" style="background:#eff6ff;">&#x1F914;</div>
+        </div>
+        <div class="kpi-val" style="color:#0f172a">56.6</div>
+        <div class="divider"></div>
+        <div class="kpi-footer">
+          <div class="kpi-desc">Scale of 0&#8211;100. Historically averages ~85. Below 70 signals consumer pessimism.</div>
+          <span class="kpi-badge warn">&#x2193; Below Average</span>
+        </div>
+      </div>
+
+      <div class="kpi">
+        <div class="kpi-stripe" style="background:linear-gradient(90deg,#059669,#0891b2)"></div>
+        <div class="kpi-header">
+          <div class="kpi-lbl">Current 6-Month Divergence</div>
+          <div class="kpi-icon" style="background:#ecfdf5;">&#x1F4D0;</div>
+        </div>
+        <div class="kpi-val" style="color:#059669">0.22&#x3C3;</div>
+        <div class="divider"></div>
+        <div class="kpi-footer">
+          <div class="kpi-desc">&#x3C3; (sigma) = standard deviations from norm. How far sentiment currently strays from spending behavior.</div>
+          <span class="kpi-badge up">&#x2713; Aligned</span>
+        </div>
+      </div>
+
+      <div class="kpi">
+        <div class="kpi-stripe" style="background:linear-gradient(90deg,#d97706,#dc2626)"></div>
+        <div class="kpi-header">
+          <div class="kpi-lbl">12-Month Peak Divergence</div>
+          <div class="kpi-icon" style="background:#fffbeb;">&#x26A0;&#xFE0F;</div>
+        </div>
+        <div class="kpi-val" style="color:#d97706">0.87&#x3C3;</div>
+        <div class="divider"></div>
+        <div class="kpi-footer">
+          <div class="kpi-desc">The largest gap seen between sentiment and spending over the past 12 months.</div>
+          <span class="kpi-badge warn">Moderate Gap</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title">Consumer Sentiment Index vs. Total U.S. Spending (2000&#8211;2026)</div>
+        <div class="card-subtitle">Blue line = how confident consumers feel (left axis, 0&#8211;100). Green line = how much they actually spend in $billions (right axis). Grey shaded bands mark U.S. recessions. Hover over any point to see exact values.</div>
+      </div>
+      <div class="event-tags">
+        <span class="etag recession">&#x25AC; Recession Periods (grey bands)</span>
+        <span class="etag event">&#x25CF; 2008 Financial Crisis</span>
+        <span class="etag event">&#x25CF; COVID-19 (Mar 2020)</span>
+        <span class="etag event">&#x25CF; Inflation Surge (2022)</span>
+        <span class="etag event">&#x25CF; Tariff Uncertainty (2025)</span>
+      </div>
+      <div class="legend-row">
+        <div class="leg"><span class="leg-line" style="background:#2563eb"></span>Sentiment Index (left axis)</div>
+        <div class="leg"><span class="leg-line" style="background:#059669"></span>Total Consumer Spending &#8212; PCE ($B, right axis)</div>
+      </div>
+      <div id="ch1" style="height:420px"></div>
+      <div class="insight">
+        <div class="insight-label">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+          Key Takeaway
+        </div>
+        <p>Sentiment and spending usually move together &#8212; but <strong>divergences are warning signals</strong>. When confidence falls sharply (2008, 2020, 2022) spending tends to follow weeks to months later. Today&#8217;s below-average sentiment reading of <strong>56.6</strong> suggests potential spending softness ahead.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE 2 : CATEGORY BREAKDOWN -->
+  <div id="p2" class="pg">
+    <div class="section-hdr">
+      <h2>Spending by Category &#8212; Which types of spending track sentiment most closely?</h2>
+      <p>All series are converted to Z-scores so different categories can be compared fairly. A Z-score of 0 = exactly average; +2 = unusually high; &#8722;2 = unusually low.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title">Spending Growth by Category vs. Consumer Sentiment (Normalized, 2000&#8211;2026)</div>
+        <div class="card-subtitle">Each line shows whether that spending type is above or below its own historical average &#8212; making very different categories (groceries vs. furniture) directly comparable.</div>
+      </div>
+
+      <div class="htr">
+        <div class="htr-icon">&#x1F4A1;</div>
+        <p><strong>How to read this chart:</strong> When a line is <strong>above the 0 line</strong>, spending in that category is higher than usual. When it is <strong>below 0</strong>, it is lower than usual. The dotted line is consumer sentiment &#8212; notice how durable goods (big purchases like cars and appliances) react most dramatically to sentiment swings.</p>
+      </div>
+
+      <div class="legend-row">
+        <div class="leg"><span class="leg-line" style="background:#94a3b8;border-top:2px dashed #94a3b8;height:0"></span>Sentiment Z-Score (reference)</div>
+        <div class="leg"><span class="leg-line" style="background:#f97316"></span>Durable Goods (cars, appliances, furniture&#8230;)</div>
+        <div class="leg"><span class="leg-line" style="background:#8b5cf6"></span>Non-Durable Goods (food, clothing, gas&#8230;)</div>
+        <div class="leg"><span class="leg-line" style="background:#059669"></span>Services (rent, healthcare, travel&#8230;)</div>
+      </div>
+
+      <div id="ch2" style="height:460px"></div>
+
+      <div class="insight">
+        <div class="insight-label">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+          Key Takeaway
+        </div>
+        <p><strong>Durable goods</strong> are the most sentiment-sensitive &#8212; people delay big-ticket purchases when confidence is low. <strong>Services</strong> (rent, insurance, subscriptions) are far more stable because many are recurring obligations. <strong>Non-durables</strong> (everyday necessities) barely budge even during crises.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE 3 : INCOME SEGMENTATION -->
+  <div id="p3" class="pg">
+    <div class="section-hdr">
+      <h2>Income Comparison &#8212; How differently do wealthy and lower-income households spend?</h2>
+      <p>Comparing the bottom 20% of earners (Q1) against the top 20% (Q5) reveals which spending categories are most unequal &#8212; and which are driven by necessity across all income levels.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title">Monthly Household Spending &#8212; Bottom 20% vs. Top 20% of Earners ($)</div>
+        <div class="card-subtitle">Dollar amounts show average monthly household spending. The wider the gap between the two shaded areas, the greater the spending inequality at that point in time.</div>
+      </div>
+
+      <div class="htr">
+        <div class="htr-icon">&#x1F4A1;</div>
+        <p><strong>How to read this:</strong> The <strong style="color:#2563eb">blue area</strong> shows top-earner (Q5) monthly spending; the <strong style="color:#dc2626">red area</strong> shows bottom-earner (Q1) spending. The wider the gap, the more unequal spending patterns are at that moment.</p>
+      </div>
+
+      <div class="legend-row">
+        <div class="leg"><span class="leg-dot" style="background:#2563eb"></span>Top 20% of Earners (Q5) &#8212; monthly average</div>
+        <div class="leg"><span class="leg-dot" style="background:#dc2626"></span>Bottom 20% of Earners (Q1) &#8212; monthly average</div>
+      </div>
+
+      <div id="ch3a" style="height:380px"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title">Spending Gap by Category &#8212; How many times more does the Top 20% spend vs. Bottom 20%?</div>
+        <div class="card-subtitle">A ratio of 4&#x00D7; means top earners spend $4 for every $1 spent by bottom earners in that category. Higher bars = more unequal. Hover to see exact ratios.</div>
+      </div>
+
+      <div id="ch3b" style="height:360px"></div>
+
+      <div class="insight">
+        <div class="insight-label">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+          Key Takeaway
+        </div>
+        <p>Top-income households outspend the bottom quintile by <strong>4.3&#x00D7; overall</strong>. The sharpest gap is <strong>Transportation (5.0&#x00D7;)</strong> &#8212; reflecting car ownership and travel differences. <strong>Healthcare has the smallest gap (2.8&#x00D7;)</strong>: medical spending is a near-universal necessity that all income levels must cover.</p>
+        <div class="insight-grid">
+          <div class="insight-stat"><div class="val">5.0&#x00D7;</div><div class="lbl">Largest gap &#8212; Transportation</div></div>
+          <div class="insight-stat"><div class="val">2.8&#x00D7;</div><div class="lbl">Smallest gap &#8212; Healthcare</div></div>
+          <div class="insight-stat"><div class="val">3.4&#x00D7;</div><div class="lbl">Apparel spending gap</div></div>
+          <div class="insight-stat"><div class="val">4.3&#x00D7;</div><div class="lbl">Overall average gap</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="foot-left">
+      <strong>Data Sources</strong>
+      FRED API (Federal Reserve Bank of St. Louis) &nbsp;&#xB7;&nbsp; BLS Consumer Expenditure Survey &nbsp;&#xB7;&nbsp; University of Michigan Surveys of Consumers
+    </div>
+    <div class="foot-right">
+      Consumer Sentiment &amp; Spending Divergence Tracker
+      <span class="foot-dot"></span>
+      Vedant Tiwari
+    </div>
+  </footer>
+
+</div><!-- /wrap -->
+<script>
+const D = {"dates": ["2000-07-01", "2000-08-01", "2000-09-01", "2000-10-01", "2000-11-01", "2000-12-01", "2001-01-01", "2001-02-01", "2001-03-01", "2001-04-01", "2001-05-01", "2001-06-01", "2001-07-01", "2001-08-01", "2001-09-01", "2001-10-01", "2001-11-01", "2001-12-01", "2002-01-01", "2002-02-01", "2002-03-01", "2002-04-01", "2002-05-01", "2002-06-01", "2002-07-01", "2002-08-01", "2002-09-01", "2002-10-01", "2002-11-01", "2002-12-01", "2003-01-01", "2003-02-01", "2003-03-01", "2003-04-01", "2003-05-01", "2003-06-01", "2003-07-01", "2003-08-01", "2003-09-01", "2003-10-01", "2003-11-01", "2003-12-01", "2004-01-01", "2004-02-01", "2004-03-01", "2004-04-01", "2004-05-01", "2004-06-01", "2004-07-01", "2004-08-01", "2004-09-01", "2004-10-01", "2004-11-01", "2004-12-01", "2005-01-01", "2005-02-01", "2005-03-01", "2005-04-01", "2005-05-01", "2005-06-01", "2005-07-01", "2005-08-01", "2005-09-01", "2005-10-01", "2005-11-01", "2005-12-01", "2006-01-01", "2006-02-01", "2006-03-01", "2006-04-01", "2006-05-01", "2006-06-01", "2006-07-01", "2006-08-01", "2006-09-01", "2006-10-01", "2006-11-01", "2006-12-01", "2007-01-01", "2007-02-01", "2007-03-01", "2007-04-01", "2007-05-01", "2007-06-01", "2007-07-01", "2007-08-01", "2007-09-01", "2007-10-01", "2007-11-01", "2007-12-01", "2008-01-01", "2008-02-01", "2008-03-01", "2008-04-01", "2008-05-01", "2008-06-01", "2008-07-01", "2008-08-01", "2008-09-01", "2008-10-01", "2008-11-01", "2008-12-01", "2009-01-01", "2009-02-01", "2009-03-01", "2009-04-01", "2009-05-01", "2009-06-01", "2009-07-01", "2009-08-01", "2009-09-01", "2009-10-01", "2009-11-01", "2009-12-01", "2010-01-01", "2010-02-01", "2010-03-01", "2010-04-01", "2010-05-01", "2010-06-01", "2010-07-01", "2010-08-01", "2010-09-01", "2010-10-01", "2010-11-01", "2010-12-01", "2011-01-01", "2011-02-01", "2011-03-01", "2011-04-01", "2011-05-01", "2011-06-01", "2011-07-01", "2011-08-01", "2011-09-01", "2011-10-01", "2011-11-01", "2011-12-01", "2012-01-01", "2012-02-01", "2012-03-01", "2012-04-01", "2012-05-01", "2012-06-01", "2012-07-01", "2012-08-01", "2012-09-01", "2012-10-01", "2012-11-01", "2012-12-01", "2013-01-01", "2013-02-01", "2013-03-01", "2013-04-01", "2013-05-01", "2013-06-01", "2013-07-01", "2013-08-01", "2013-09-01", "2013-10-01", "2013-11-01", "2013-12-01", "2014-01-01", "2014-02-01", "2014-03-01", "2014-04-01", "2014-05-01", "2014-06-01", "2014-07-01", "2014-08-01", "2014-09-01", "2014-10-01", "2014-11-01", "2014-12-01", "2015-01-01", "2015-02-01", "2015-03-01", "2015-04-01", "2015-05-01", "2015-06-01", "2015-07-01", "2015-08-01", "2015-09-01", "2015-10-01", "2015-11-01", "2015-12-01", "2016-01-01", "2016-02-01", "2016-03-01", "2016-04-01", "2016-05-01", "2016-06-01", "2016-07-01", "2016-08-01", "2016-09-01", "2016-10-01", "2016-11-01", "2016-12-01", "2017-01-01", "2017-02-01", "2017-03-01", "2017-04-01", "2017-05-01", "2017-06-01", "2017-07-01", "2017-08-01", "2017-09-01", "2017-10-01", "2017-11-01", "2017-12-01", "2018-01-01", "2018-02-01", "2018-03-01", "2018-04-01", "2018-05-01", "2018-06-01", "2018-07-01", "2018-08-01", "2018-09-01", "2018-10-01", "2018-11-01", "2018-12-01", "2019-01-01", "2019-02-01", "2019-03-01", "2019-04-01", "2019-05-01", "2019-06-01", "2019-07-01", "2019-08-01", "2019-09-01", "2019-10-01", "2019-11-01", "2019-12-01", "2020-01-01", "2020-02-01", "2020-03-01", "2020-04-01", "2020-05-01", "2020-06-01", "2020-07-01", "2020-08-01", "2020-09-01", "2020-10-01", "2020-11-01", "2020-12-01", "2021-01-01", "2021-02-01", "2021-03-01", "2021-04-01", "2021-05-01", "2021-06-01", "2021-07-01", "2021-08-01", "2021-09-01", "2021-10-01", "2021-11-01", "2021-12-01", "2022-01-01", "2022-02-01", "2022-03-01", "2022-04-01", "2022-05-01", "2022-06-01", "2022-07-01", "2022-08-01", "2022-09-01", "2022-10-01", "2022-11-01", "2022-12-01", "2023-01-01", "2023-02-01", "2023-03-01", "2023-04-01", "2023-05-01", "2023-06-01", "2023-07-01", "2023-08-01", "2023-09-01", "2023-10-01", "2023-11-01", "2023-12-01", "2024-01-01", "2024-02-01", "2024-03-01", "2024-04-01", "2024-05-01", "2024-06-01", "2024-07-01", "2024-08-01", "2024-09-01", "2024-10-01", "2024-11-01", "2024-12-01", "2025-01-01", "2025-02-01", "2025-03-01", "2025-04-01", "2025-05-01", "2025-06-01", "2025-07-01", "2025-08-01", "2025-09-01", "2025-10-01", "2025-11-01", "2025-12-01", "2026-01-01", "2026-02-01", "2026-03-01"], "sentiment": [108.3, 107.3, 106.8, 105.8, 107.6, 98.4, 94.7, 90.6, 91.5, 88.4, 92.0, 92.6, 92.4, 91.5, 81.8, 82.7, 83.9, 88.8, 93.0, 90.7, 95.7, 93.0, 96.9, 92.4, 88.1, 87.6, 86.1, 80.6, 84.2, 86.7, 82.4, 79.9, 77.6, 86.0, 92.1, 89.7, 90.9, 89.3, 87.7, 89.6, 93.7, 92.6, 103.8, 94.4, 95.8, 94.2, 90.2, 95.6, 96.7, 95.9, 94.2, 91.7, 92.8, 97.1, 95.5, 94.1, 92.6, 87.7, 86.9, 96.0, 96.5, 89.1, 76.9, 74.2, 81.6, 91.5, 91.2, 86.7, 88.9, 87.4, 79.1, 84.9, 84.7, 82.0, 85.4, 93.6, 92.1, 91.7, 96.9, 91.3, 88.4, 87.1, 88.3, 85.3, 90.4, 83.4, 83.4, 80.9, 76.1, 75.5, 78.4, 70.8, 69.5, 62.6, 59.8, 56.4, 61.2, 63.0, 70.3, 57.6, 55.3, 60.1, 61.2, 56.3, 57.3, 65.1, 68.7, 70.8, 66.0, 65.7, 73.5, 70.6, 67.4, 72.5, 74.4, 73.6, 73.6, 72.2, 73.6, 76.0, 67.8, 68.9, 68.2, 67.7, 71.6, 74.5, 74.2, 77.5, 67.5, 69.8, 74.3, 71.5, 63.7, 55.8, 59.5, 60.8, 63.7, 69.9, 75.0, 75.3, 76.2, 76.4, 79.3, 73.2, 72.3, 74.3, 78.3, 82.6, 82.7, 72.9, 73.8, 77.6, 78.6, 76.4, 84.5, 84.1, 85.1, 82.1, 77.5, 73.2, 75.1, 82.5, 81.2, 81.6, 80.0, 84.1, 81.9, 82.5, 81.8, 82.5, 84.6, 86.9, 88.8, 93.6, 98.1, 95.4, 93.0, 95.9, 90.7, 96.1, 93.1, 91.9, 87.2, 90.0, 91.3, 92.6, 92.0, 91.7, 91.0, 89.0, 94.7, 93.5, 90.0, 89.8, 91.2, 87.2, 93.8, 98.2, 98.5, 96.3, 96.9, 97.0, 97.1, 95.0, 93.4, 96.8, 95.1, 100.7, 98.5, 95.9, 95.7, 99.7, 101.4, 98.8, 98.0, 98.2, 97.9, 96.2, 100.1, 98.6, 97.5, 98.3, 91.2, 93.8, 98.4, 97.2, 100.0, 98.2, 98.4, 89.8, 93.2, 95.5, 96.8, 99.3, 99.8, 101.0, 89.1, 71.8, 72.3, 78.1, 72.5, 74.1, 80.4, 81.8, 76.9, 80.7, 79.0, 76.8, 84.9, 88.3, 82.9, 85.5, 81.2, 70.3, 72.8, 71.7, 67.4, 70.6, 67.2, 62.8, 59.4, 65.2, 58.4, 50.0, 51.5, 58.2, 58.6, 59.9, 56.7, 59.8, 64.9, 66.9, 62.0, 63.7, 59.0, 64.2, 71.5, 69.4, 67.8, 63.8, 61.3, 69.7, 79.0, 76.9, 79.4, 77.2, 69.1, 68.2, 66.4, 67.9, 70.1, 70.5, 71.8, 74.0, 71.7, 64.7, 57.0, 52.2, 52.2, 60.7, 61.7, 58.2, 55.1, 53.6, 51.0, 52.9, 56.4, 56.6, 56.6], "pce_total": [6768.5, 6802.8, 6888.6, 6893.8, 6909.8, 6952.2, 6987.4, 7001.8, 6996.7, 7004.2, 7052.8, 7069.7, 7082.3, 7121.7, 7007.0, 7212.9, 7182.3, 7166.7, 7184.6, 7225.2, 7243.4, 7312.5, 7288.9, 7322.5, 7387.3, 7412.6, 7391.5, 7435.2, 7463.8, 7519.9, 7541.3, 7548.6, 7611.5, 7634.5, 7650.3, 7699.6, 7757.0, 7852.1, 7853.7, 7867.4, 7922.6, 7950.4, 8007.1, 8040.4, 8098.8, 8107.2, 8176.5, 8157.6, 8236.9, 8271.6, 8341.5, 8397.1, 8444.5, 8504.4, 8497.7, 8559.1, 8598.4, 8678.4, 8671.6, 8753.4, 8853.8, 8850.1, 8900.4, 8938.5, 8946.2, 8981.1, 9071.6, 9096.0, 9132.9, 9191.6, 9231.8, 9259.6, 9343.8, 9342.2, 9375.4, 9393.6, 9400.2, 9488.3, 9538.7, 9566.0, 9611.7, 9643.6, 9685.8, 9706.8, 9751.1, 9798.9, 9845.1, 9882.7, 9955.9, 9972.8, 9996.4, 9981.7, 10035.3, 10070.3, 10132.3, 10187.1, 10185.1, 10175.7, 10116.4, 10034.1, 9885.2, 9801.5, 9847.2, 9824.5, 9773.2, 9772.5, 9791.6, 9852.4, 9886.3, 10004.1, 9927.8, 9976.7, 9985.7, 10052.6, 10056.1, 10093.4, 10156.0, 10182.3, 10210.8, 10231.3, 10268.1, 10307.1, 10327.1, 10386.4, 10433.6, 10471.0, 10514.3, 10540.6, 10619.7, 10652.1, 10672.2, 10694.8, 10731.6, 10750.3, 10783.2, 10802.9, 10806.8, 10817.8, 10896.8, 10987.2, 10993.9, 11018.5, 11006.8, 10989.8, 11016.8, 11056.0, 11105.3, 11137.4, 11178.4, 11181.2, 11252.4, 11290.5, 11290.1, 11281.1, 11321.6, 11344.4, 11372.6, 11406.6, 11445.9, 11498.0, 11562.5, 11593.2, 11578.8, 11636.9, 11722.3, 11762.3, 11807.3, 11861.7, 11904.4, 11983.7, 11991.4, 12064.7, 12083.9, 12096.1, 12066.7, 12116.6, 12176.1, 12209.1, 12275.4, 12307.9, 12364.9, 12396.2, 12386.4, 12394.9, 12423.2, 12452.0, 12478.0, 12554.5, 12537.0, 12611.5, 12652.7, 12731.2, 12756.7, 12788.1, 12846.6, 12867.0, 12893.0, 13005.9, 13063.7, 13088.4, 13139.9, 13169.2, 13171.9, 13225.2, 13263.3, 13294.6, 13417.3, 13447.5, 13540.6, 13666.1, 13703.3, 13738.7, 13793.2, 13838.4, 13905.0, 13930.4, 13974.8, 14014.0, 14017.8, 14083.1, 14162.9, 14051.6, 14084.6, 14117.4, 14248.6, 14290.0, 14353.3, 14408.7, 14496.0, 14558.2, 14590.6, 14617.4, 14711.0, 14774.8, 14868.3, 14828.1, 13812.8, 12249.2, 13281.5, 14049.2, 14307.2, 14462.2, 14668.1, 14725.8, 14701.6, 14822.0, 15073.0, 14983.5, 15709.7, 15917.5, 15973.5, 16191.7, 16239.7, 16412.9, 16489.6, 16704.2, 16849.8, 16891.0, 16993.8, 17106.0, 17347.2, 17490.0, 17574.5, 17755.2, 17770.1, 17916.5, 17992.8, 18109.6, 18108.0, 18116.5, 18449.1, 18491.6, 18520.4, 18641.8, 18664.6, 18773.0, 18884.2, 18953.3, 19048.1, 19109.4, 19178.9, 19283.5, 19303.3, 19446.5, 19581.8, 19665.7, 19758.0, 19844.5, 19949.5, 20001.3, 20147.6, 20226.0, 20313.6, 20514.3, 20462.2, 20519.8, 20683.0, 20746.4, 20755.0, 20868.4, 21007.3, 21123.8, 21202.4, 21287.7, 21361.0, 21455.5, 21536.6, 21536.6, 21536.6], "pce_durables": [897.3, 906.4, 931.3, 920.6, 913.4, 913.5, 916.5, 938.9, 925.1, 908.3, 916.0, 934.1, 925.0, 942.5, 904.1, 1035.1, 997.0, 955.6, 970.7, 983.2, 974.9, 1001.5, 962.7, 968.0, 1001.6, 1019.7, 983.9, 969.9, 978.5, 1009.9, 982.6, 956.4, 984.6, 1003.9, 1005.7, 1013.9, 1024.9, 1059.3, 1041.1, 1036.2, 1053.5, 1051.5, 1048.1, 1065.2, 1079.4, 1062.8, 1091.5, 1043.6, 1076.9, 1079.0, 1099.3, 1098.6, 1099.9, 1122.6, 1096.4, 1113.2, 1120.2, 1142.8, 1116.4, 1154.6, 1202.2, 1139.5, 1113.8, 1099.6, 1116.4, 1128.2, 1167.9, 1143.5, 1151.0, 1151.0, 1147.2, 1149.5, 1168.7, 1146.0, 1166.9, 1168.3, 1164.4, 1175.5, 1183.5, 1175.1, 1178.5, 1181.2, 1197.7, 1178.2, 1180.7, 1192.4, 1202.6, 1209.0, 1197.7, 1180.0, 1168.4, 1148.4, 1143.7, 1139.1, 1143.7, 1130.4, 1100.0, 1114.3, 1073.2, 1026.6, 1002.4, 995.0, 1023.0, 1006.2, 984.2, 978.8, 998.9, 1006.4, 1020.8, 1089.1, 995.4, 1003.6, 1017.4, 1021.6, 1006.1, 1005.2, 1052.0, 1046.0, 1041.7, 1044.1, 1047.5, 1053.7, 1056.1, 1079.2, 1077.5, 1078.7, 1085.0, 1083.8, 1095.0, 1090.9, 1081.2, 1076.6, 1085.7, 1085.2, 1101.3, 1114.4, 1107.9, 1114.9, 1130.4, 1145.9, 1138.0, 1137.4, 1133.4, 1129.9, 1134.7, 1138.4, 1151.9, 1141.2, 1169.4, 1180.1, 1193.1, 1194.2, 1181.9, 1184.1, 1189.3, 1189.5, 1193.6, 1190.8, 1191.4, 1194.6, 1205.3, 1193.7, 1177.5, 1208.9, 1236.3, 1234.7, 1243.5, 1254.5, 1253.8, 1264.0, 1266.0, 1269.8, 1279.0, 1279.2, 1280.2, 1283.8, 1309.2, 1315.9, 1319.6, 1317.8, 1324.7, 1330.9, 1325.1, 1317.5, 1332.1, 1332.8, 1329.7, 1353.1, 1333.2, 1339.2, 1340.2, 1358.2, 1365.6, 1363.4, 1369.9, 1375.5, 1357.7, 1392.1, 1384.9, 1390.3, 1380.1, 1390.8, 1388.8, 1403.5, 1412.6, 1403.5, 1437.3, 1447.1, 1467.0, 1485.0, 1478.2, 1490.7, 1481.1, 1478.4, 1498.8, 1487.2, 1492.6, 1497.0, 1485.2, 1483.9, 1519.6, 1473.3, 1469.9, 1472.8, 1505.1, 1496.6, 1525.5, 1531.5, 1538.1, 1541.0, 1553.5, 1531.8, 1557.4, 1560.4, 1551.3, 1551.9, 1350.9, 1186.0, 1541.4, 1674.1, 1737.0, 1760.4, 1765.8, 1773.4, 1764.6, 1803.7, 1863.2, 1804.0, 2066.4, 2107.7, 2034.1, 2018.7, 1958.7, 1968.0, 1962.9, 2036.7, 2049.0, 2033.1, 2099.8, 2066.9, 2084.5, 2118.0, 2062.6, 2068.5, 2072.3, 2101.8, 2092.0, 2108.2, 2036.4, 2024.1, 2165.6, 2138.5, 2120.4, 2146.6, 2139.1, 2136.7, 2151.1, 2150.3, 2145.7, 2134.1, 2125.0, 2139.4, 2106.0, 2130.9, 2142.1, 2140.6, 2158.8, 2156.2, 2181.2, 2170.9, 2199.7, 2210.1, 2246.5, 2294.1, 2198.0, 2209.2, 2300.2, 2296.6, 2247.0, 2253.6, 2280.3, 2281.8, 2269.8, 2271.3, 2288.9, 2285.3, 2268.4, 2268.4, 2268.4], "pce_nondurables": [1547.8, 1548.8, 1575.8, 1572.6, 1572.5, 1587.7, 1582.1, 1574.9, 1560.3, 1582.1, 1603.0, 1586.8, 1592.0, 1590.2, 1591.9, 1592.0, 1580.6, 1573.1, 1578.6, 1584.5, 1593.8, 1607.3, 1602.6, 1618.7, 1617.5, 1616.3, 1616.4, 1634.8, 1645.0, 1645.8, 1667.1, 1687.0, 1694.3, 1676.2, 1653.0, 1681.0, 1696.8, 1733.1, 1743.6, 1730.0, 1746.1, 1749.5, 1775.3, 1764.8, 1796.9, 1788.1, 1810.0, 1810.9, 1815.1, 1825.1, 1838.7, 1868.0, 1880.6, 1883.8, 1886.1, 1897.2, 1892.7, 1922.4, 1913.3, 1922.7, 1947.3, 1984.4, 2026.4, 2051.7, 2003.3, 2004.2, 2041.8, 2047.9, 2038.4, 2072.1, 2076.1, 2082.3, 2116.8, 2123.0, 2098.9, 2083.1, 2072.0, 2123.4, 2116.2, 2120.9, 2150.2, 2151.0, 2170.3, 2177.0, 2194.8, 2174.6, 2195.1, 2196.9, 2245.0, 2255.9, 2252.6, 2238.4, 2267.6, 2276.2, 2300.6, 2340.6, 2356.3, 2336.8, 2303.1, 2262.9, 2153.0, 2085.3, 2110.3, 2130.2, 2106.2, 2119.6, 2131.7, 2168.1, 2175.0, 2197.9, 2207.2, 2218.8, 2219.7, 2230.2, 2241.5, 2246.6, 2247.2, 2257.0, 2241.3, 2243.7, 2246.2, 2262.2, 2279.7, 2297.9, 2323.4, 2339.8, 2365.4, 2373.5, 2404.4, 2430.4, 2425.1, 2439.2, 2430.5, 2433.8, 2446.7, 2446.9, 2454.7, 2444.8, 2470.0, 2501.3, 2500.5, 2500.7, 2486.6, 2461.2, 2460.3, 2498.5, 2511.6, 2524.4, 2509.9, 2497.2, 2543.4, 2561.7, 2535.8, 2512.2, 2526.9, 2529.7, 2549.3, 2550.2, 2560.5, 2566.0, 2577.9, 2591.3, 2589.4, 2610.8, 2608.1, 2639.0, 2636.3, 2649.5, 2660.5, 2670.1, 2651.3, 2666.2, 2655.8, 2634.7, 2587.0, 2604.6, 2625.7, 2617.4, 2649.4, 2656.7, 2676.5, 2672.5, 2651.1, 2637.2, 2649.4, 2644.6, 2630.2, 2631.0, 2637.4, 2660.0, 2672.3, 2701.5, 2676.4, 2682.2, 2694.8, 2701.5, 2700.7, 2730.6, 2751.5, 2757.7, 2770.2, 2778.6, 2755.8, 2771.4, 2763.0, 2788.8, 2842.9, 2825.8, 2856.9, 2893.0, 2906.9, 2906.9, 2900.0, 2909.1, 2939.3, 2916.9, 2926.3, 2929.1, 2937.1, 2958.0, 2976.3, 2898.7, 2929.4, 2936.4, 2976.6, 3002.2, 3011.3, 3016.9, 3036.2, 3040.4, 3019.3, 3034.0, 3046.0, 3061.4, 3059.1, 3054.1, 3128.7, 2730.6, 2960.2, 3105.7, 3144.2, 3135.1, 3191.8, 3170.1, 3163.4, 3200.2, 3284.1, 3235.4, 3450.2, 3463.0, 3466.0, 3543.9, 3502.6, 3561.4, 3581.0, 3635.7, 3684.7, 3683.1, 3702.5, 3740.0, 3836.3, 3834.8, 3892.8, 3965.6, 3893.3, 3884.8, 3889.0, 3921.0, 3907.8, 3860.9, 3928.7, 3950.6, 3901.3, 3940.5, 3925.4, 3949.9, 3959.3, 4009.0, 4034.3, 4040.1, 4025.2, 4031.2, 3989.1, 3997.9, 4043.0, 4059.5, 4077.5, 4080.5, 4103.8, 4088.6, 4130.5, 4124.6, 4124.3, 4182.1, 4185.1, 4209.2, 4195.2, 4191.1, 4190.3, 4234.8, 4241.3, 4273.8, 4289.9, 4289.6, 4304.1, 4312.3, 4304.6, 4304.6, 4304.6], "pce_services": [4323.4, 4347.6, 4381.5, 4400.6, 4424.0, 4451.0, 4488.9, 4488.0, 4511.3, 4513.8, 4533.8, 4548.8, 4565.3, 4589.0, 4511.0, 4585.8, 4604.8, 4638.1, 4635.3, 4657.5, 4674.7, 4703.6, 4723.7, 4735.8, 4768.2, 4776.6, 4791.3, 4830.4, 4840.3, 4864.3, 4891.6, 4905.3, 4932.6, 4954.4, 4991.7, 5004.6, 5035.3, 5059.7, 5069.0, 5101.2, 5123.0, 5149.4, 5183.7, 5210.4, 5222.5, 5256.3, 5274.9, 5303.1, 5345.0, 5367.5, 5403.5, 5430.4, 5463.9, 5498.0, 5515.2, 5548.7, 5585.5, 5613.2, 5641.9, 5676.1, 5704.3, 5726.2, 5760.3, 5787.1, 5826.5, 5848.8, 5861.9, 5904.6, 5943.4, 5968.5, 6008.5, 6027.8, 6058.3, 6073.2, 6109.5, 6142.2, 6163.8, 6189.3, 6239.0, 6269.9, 6283.1, 6311.3, 6317.8, 6351.6, 6375.7, 6432.0, 6447.4, 6476.7, 6513.2, 6536.9, 6575.4, 6594.9, 6623.9, 6655.0, 6687.9, 6716.1, 6728.9, 6724.6, 6740.1, 6744.6, 6729.8, 6721.2, 6714.0, 6688.1, 6682.8, 6674.1, 6661.0, 6678.0, 6690.4, 6717.2, 6725.2, 6754.3, 6748.6, 6800.8, 6808.5, 6841.7, 6856.9, 6879.3, 6927.9, 6943.5, 6974.5, 6991.2, 6991.3, 7009.3, 7032.7, 7052.5, 7063.8, 7083.4, 7120.3, 7130.8, 7165.9, 7179.0, 7215.4, 7231.2, 7235.2, 7241.6, 7244.2, 7258.1, 7296.4, 7340.0, 7355.4, 7380.5, 7386.8, 7398.8, 7421.8, 7419.1, 7441.8, 7471.9, 7499.1, 7503.9, 7515.8, 7534.6, 7572.4, 7584.8, 7605.4, 7625.3, 7629.7, 7665.5, 7694.0, 7737.4, 7779.3, 7808.2, 7811.9, 7817.2, 7877.9, 7888.6, 7927.5, 7957.7, 7990.1, 8049.5, 8074.1, 8128.7, 8149.1, 8182.2, 8199.5, 8228.3, 8241.2, 8275.8, 8306.5, 8333.4, 8363.7, 8392.8, 8410.2, 8440.2, 8441.7, 8474.6, 8518.0, 8570.5, 8566.4, 8612.3, 8640.2, 8671.5, 8714.7, 8742.5, 8781.9, 8790.1, 8834.7, 8883.2, 8927.3, 8940.4, 8989.7, 8999.7, 9027.2, 9050.2, 9087.6, 9102.4, 9137.1, 9174.6, 9216.7, 9288.0, 9318.2, 9341.2, 9412.1, 9451.0, 9466.9, 9526.3, 9555.9, 9587.9, 9595.5, 9641.1, 9667.1, 9679.7, 9685.3, 9708.2, 9766.9, 9791.2, 9816.5, 9860.2, 9921.7, 9976.8, 10017.8, 10051.6, 10107.6, 10153.0, 10257.9, 10222.2, 9333.2, 8332.6, 8779.9, 9269.4, 9426.1, 9566.7, 9710.5, 9782.3, 9773.7, 9818.2, 9925.7, 9944.1, 10193.1, 10346.9, 10473.4, 10629.1, 10778.5, 10883.4, 10945.7, 11031.9, 11116.2, 11174.8, 11191.5, 11299.1, 11426.5, 11537.2, 11619.1, 11721.1, 11804.4, 11929.8, 12011.9, 12080.4, 12163.8, 12231.5, 12354.7, 12402.5, 12498.7, 12554.7, 12600.1, 12686.3, 12773.7, 12794.0, 12868.1, 12935.2, 13028.8, 13113.0, 13208.2, 13317.6, 13396.7, 13465.6, 13521.7, 13607.9, 13664.6, 13741.8, 13817.4, 13891.4, 13942.9, 14038.0, 14079.1, 14101.4, 14187.5, 14258.6, 14317.8, 14380.0, 14485.7, 14568.2, 14642.7, 14726.8, 14768.1, 14857.9, 14963.6, 14963.6, 14963.6], "recession": [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "sentiment_z": [0.3299216333891346, -0.1544309675702813, -0.0726568913546205, -0.1567496010693724, 0.3148334530571814, -1.5180226037787925, -0.6616196040484112, -0.7634039211596076, 0.1882606067651862, -0.5950771533100688, 0.7387553370915281, 0.1272571951703365, -0.0279595759687983, -0.1634892965208874, -1.884702017753776, 0.2073672430605565, 0.2700834062395111, 1.0548340666966072, 0.856278921099192, -0.4315103633183082, 0.9962615901643076, -0.49376436116654, 0.7604156477584497, -0.8196332794389293, -0.8213705364009168, -0.0908135596322232, -0.2954896419923816, -1.1314336458709144, 0.8092165886586175, 0.541501645111066, -0.8760712256927922, -0.5317863184468709, -0.5040056814856628, 1.945999518437061, 1.2788095749315558, -0.4552436804454533, 0.2498382147041527, -0.304044199352953, -0.3096827200592065, 0.3979977137986109, 0.8287745956143421, -0.1992351822083865, 2.173113295458044, -1.608434508695331, 0.2758087696901277, -0.2879478560241624, -0.7485328045221028, 1.0810105812148638, 0.216375185083484, -0.1372564871808192, -0.3062797502604109, -0.4638371012394377, 0.225124430943044, 0.839095691384516, -0.2839500736177163, -0.2514431758654891, -0.2743425116297567, -0.9354194440131988, -0.152435620849147, 1.88289855128166, 0.1037749571803745, -1.3603679642953084, -2.4374077868687403, -0.6170816284767229, 1.7937256463186426, 2.179785794487781, -0.0479635744551635, -0.8715263430016748, 0.4643299978364362, -0.2910128254184282, -1.6872251363372444, 1.3216236637809116, -0.0314617893281678, -0.559273464897909, 0.7519755737225008, 1.727364161012792, -0.2758649381746021, -0.0669941654367371, 1.024507742624841, -1.0225928169287817, -0.5572389117431971, -0.2522691178195779, 0.2569779901411416, -0.5967810744220197, 1.0796163453888294, -1.3737715983095482, 0.0106557375650041, -0.525282217055841, -1.0501436789680827, -0.1303079168330347, 0.6973945651390331, -1.72250198262314, -0.3176289688756269, -1.764370768139233, -0.7890390302500737, -1.0058697902763776, 1.5322634112800169, 0.5365054483341603, 2.08233666157937, -3.2192433393926394, -0.7032582794861796, 1.5625304716974922, 0.3378900001734316, -1.420824030639927, 0.3282203941573924, 2.44443136227671, 0.9993501246332864, 0.5571720308534733, -1.2014724092927147, -0.0706119450084107, 2.133263702496216, -0.6947698608273641, -0.7997188875296721, 1.363509444499305, 0.4792059626089713, -0.1815903932538296, 0.0106557375650041, -0.3294318471172216, 0.3573378183490994, 0.5936630255916819, -1.918382411940802, 0.3007262269863402, -0.170987558752936, -0.120421169811472, 1.0406065743152275, 0.7348007303281209, -0.0613397933054027, 0.8058085347118971, -2.29629783226098, 0.6198623654486779, 1.1633062497094335, -0.6631113211863257, -1.9397686441969624, -2.2066634510157788, 1.196173544281135, 0.4012869512792344, 0.8634317487794615, 1.7508302906284028, 1.3151241187863476, 0.0821712982296097, 0.2243476519014745, 0.0575819584735391, 0.689304709840382, -1.3646435059851003, -0.2091666825106287, 0.5052308458956074, 0.973180107209762, 0.9925104976473902, 0.0323008830446084, -2.1080035566101283, 0.2313827766532896, 0.9312489981527432, 0.2410538067164385, -0.4897712136504262, 1.906192522196235, -0.0739780620380805, 0.2232465837736999, -0.6196224116530223, -0.9910847589550476, -0.9813342974601678, 0.4747252910580037, 1.7723572985439708, -0.2710722286895022, 0.0987290881371763, -0.3399107362810999, 0.9269488585802624, -0.4570441240941262, 0.1416366179031089, -0.1410439365720388, 0.1636535751726586, 0.465754759976129, 0.4967248555573028, 0.4015635777915562, 0.977082233032644, 0.8702177647838211, -0.4814238082923702, -0.4391276628413216, 0.5681695169396179, -0.9587939899009732, 1.075110058372251, -0.5474781906187023, -0.2197918263381259, -0.9037162295831082, 0.5847485410652761, 0.2689063732983024, 0.2652292010479918, -0.1051902030364073, -0.047644991237662, -0.125824340039205, -0.3822869034493124, 1.1557082538241394, -0.2158983088909793, -0.6586075306866522, -0.029075129470888, 0.2893912189972111, -0.7735061118276004, 1.3638744886727905, 0.8493243594313812, 0.0652755649565031, -0.3886697280749246, 0.1220506918712432, 0.0291066046095348, 0.0290875830971188, -0.3760143896123151, -0.2904624126017556, 0.6614932810865715, -0.303333036014101, 1.0634610470334356, -0.3799456364720671, -0.4612743581912744, -0.0266307904144564, 0.7579447727228475, 0.3155114374893518, -0.4477773436183667, -0.1341126038613221, 0.0471432685163339, -0.0439640898264968, -0.2998050722660207, 0.7354756091657321, -0.2572596994902121, -0.1888044975543305, 0.1573543235436799, -1.2806984860329067, 0.5203609396701954, 0.8874456604253063, -0.2073795083636713, 0.5256854954376771, -0.3111642854257209, 0.0470689558260034, -1.551930191590504, 0.6875847639003567, 0.4518729841545766, 0.2540333000361731, 0.4724039340048659, 0.1006803607581113, 0.2256323728293495, -2.095866965179565, -3.4607786044598976, 0.1351605437359728, 1.4449235517237575, -1.2713133396494336, 0.4052243481283424, 1.5307233225414412, 0.3219796956820654, -1.0603291256885596, 0.8941379564385449, -0.3659751581283958, -0.4872374063025031, 1.8963199347762856, 0.7266536947489196, -1.0827305240116347, 0.5713929442235499, -0.888516516405182, -2.3893430655267456, 0.6464626424779281, -0.2594923281323371, -1.061578958591912, 0.8595051223080936, -0.8503673015980905, -1.1599858804568135, -0.9573096535960572, 1.756405955808743, -1.8540137889661217, -2.5609654507170427, 0.5470224425495458, 2.336647273743923, 0.1335347077791024, 0.4072864067799663, -0.944476959124216, 0.9881611963845648, 1.5354440293270788, 0.5616230770457871, -1.2988593867121527, 0.5008833711530284, -1.308508842983057, 1.5864223284800396, 2.0436136536538667, -0.5144585190632165, -0.401537695660389, -1.044146042148942, -0.6899277328954736, 2.460617848424248, 2.3962178400787435, -0.4646058997630689, 0.5918940394554909, -0.4847291284996431, -1.8652381788317096, -0.2222096915165594, -0.4612211289903103, 0.4145463286678223, 0.5899423114314678, 0.1126750823076673, 0.3403374002032548, 0.5584768847172743, -0.5450394973288902, -1.734842605016023, -2.117125626876504, -1.4949350132687944, 0.0106557375650041, 2.921969270367432, 0.3052008803352069, -1.0035438666737282, -0.941656281594262, -0.4760654103338541, -0.8566038600468158, 0.6767320378726019, 1.1935690755901418, 0.0740560573031286, 0.0106557375650041], "durables_z": [0.0, 0.23037385448666198, 0.8240004185667382, -0.510584695076087, -0.384927125717525, -0.11327126694962225, -0.004526566878571552, 0.7201912575520819, -0.6204989780585781, -0.7390938527724467, 0.1733685227960483, 0.5598455742187043, -0.45073081148007005, 0.531040569188894, -1.5126510663357633, 4.846330984400638, -1.3778701659664936, -1.5394337329778445, 0.42425739295654125, 0.3240868387126027, -0.40619369326378496, 0.817613101610486, -1.4441136125632732, 0.07156264210420796, 1.0719849484079014, 0.5019983075316975, -1.3196483719923833, -0.6044348006578498, 0.18671135494924335, 0.9822098544355623, -1.0430078230364157, -1.0303874745234416, 0.8929981664786237, 0.5544348184888078, -0.05560256505238267, 0.1622751210209268, 0.2546145580361762, 1.032712141746629, -0.7055570692624384, -0.2782433686694637, 0.45488206209559967, -0.18205180758696246, -0.2277832905873436, 0.4418522038159691, 0.33962220097491336, -0.6438217528743664, 0.8079974715800577, -1.6202744648057907, 0.9760043992284385, -0.050223393307092044, 0.5274368875684601, -0.13883384117750114, -0.07648708071005225, 0.5899354084637013, -0.9164811542051282, 0.407859123484155, 0.09837821163877888, 0.5740661918896123, -0.908344872382199, 1.0550762302124361, 1.295176818184473, -1.903554787071147, -0.8895937273280508, -0.5537398422873767, 0.40633164256057114, 0.2450400963856834, 1.0883604984629769, -0.8326777466814543, 0.10764864748368656, -0.11702150888536211, -0.23011264476377916, -0.0483448765331549, 0.4551319743234289, -0.7823607006302402, 0.5076935309735585, -0.07592407656254979, -0.2313700224351007, 0.20952201502038084, 0.11610284562636923, -0.36014745959509764, -0.017909932458137854, -0.03854232638991714, 0.36147723169846857, -0.6747294840885182, -0.044337096559209144, 0.22242128364491112, 0.17599932336797805, 0.06527530051330173, -0.4371854635620083, -0.6232487479159197, -0.4537627242721285, -0.7033739539567044, -0.25721406918928014, -0.25479510796634314, 0.02130845799104642, -0.5153669149238327, -1.0382380509664497, 0.32828971904851545, -1.3804771083360325, -1.6044138668743317, -0.924506389222238, -0.36989945463945223, 0.8469301248331305, -0.6795621983574408, -0.8659815729913959, -0.30496647245147585, 0.5864109265513564, 0.14017172748265222, 0.37310947453213894, 2.1749031405512853, -3.064102871577538, 0.1651651705367358, 0.3539978173469344, 0.024387751319557945, -0.6367435160667954, -0.1476638295860471, 1.4778058096203752, -0.3123905764199689, -0.2578391497234039, -0.03810118286197686, -0.0054747092879769395, 0.08572713170138527, -0.038999962317497236, 0.6322293171052392, -0.1709809295023169, -0.07887241207860671, 0.08303844476136879, -0.15490690225797465, 0.23696700395830134, -0.2452811530391304, -0.4216055087555224, -0.26275926810559547, 0.17251765101963662, -0.1327969117779968, 0.3911805077393938, 0.29043939996598866, -0.31682015745583963, 0.09940864626173926, 0.35920775161921126, 0.3526777148730881, -0.35317842287824097, -0.1350819885906667, -0.2374882218836661, -0.2228018904309216, 0.02849810102447398, -0.005324649440616891, 0.28919650135217356, -0.43521353536285823, 0.7294408268297743, 0.1964087932348862, 0.26032890881981724, -0.08543976315979217, -0.46983756234804136, -0.053259463322840275, 0.03340876826483796, -0.11126102627523923, 0.0010485292385320924, -0.19737773170287942, -0.0997618297581811, -0.025016244917413583, 0.18979700383808348, -0.44669431578520813, -0.581900707532675, 0.7964374202097843, 0.6593694660879609, -0.1613534151748606, 0.12711993972676697, 0.18599562682171256, -0.13613533661652963, 0.1616497627519719, -0.06282101863050776, -0.014203264496690661, 0.1311619298749369, -0.111665025720223, -0.09024328042924146, -0.02069518844492675, 0.5607083789189128, 0.058281390545703755, -0.02070535536917942, -0.16374663597987762, 0.0623361310473807, 0.043300979991078806, -0.2663019334688764, -0.3134865264629872, 0.2625752756911734, -0.09902113587376288, -0.1966955788938456, 0.4857913137671023, -0.6208044708521369, 0.03714010156048895, -0.09144302184752483, 0.34304771745340984, 0.06961142648785112, -0.1722063079849115, 0.046287581599410495, 0.023007964149149726, -0.5603031047930362, 0.7508889415327901, -0.29418831504560905, 0.01654440427931849, -0.3683327657212207, 0.14855735880497187, -0.16628051067004362, 0.24555354487594477, 0.10507885417392925, -0.33769109656320095, 0.7079226967634354, 0.11653874745809953, 0.3540369707202309, 0.3032816793485958, -0.27387809266937585, 0.1726442149770007, -0.3376193585360325, -0.1794667972324525, 0.3556490002852163, -0.3821366904682162, 0.007356808181451077, -0.01604286537691955, -0.3870319137782143, -0.14700475881357844, 0.7070860059917241, -1.1607126550037081, -0.19607262777467477, -0.04943959274202746, 0.6342190722298517, -0.31047379355022015, 0.5444519071288462, 0.017706946733386998, 0.030599179949799316, -0.05243620328812869, 0.16083953784620608, -0.5955069955613657, 0.455455689137444, -0.051037092856592026, -0.3167894270817997, -0.10377273308143026, -4.553645439586194, -4.298383306792, 10.147838421566144, 2.8319858843348813, 1.1700110751915556, 0.34444090348135253, -0.011945711826872634, 0.03041070019387851, -0.28700089684149316, 0.6419942197702851, 1.0129642068897273, -1.205406450164459, 4.865481740724496, 0.5676085319760856, -1.3131816096124986, -0.3763610357289009, -1.1351433647649203, 0.04562146937671497, -0.2057913362173966, 1.1708676277343317, 0.08984888491103986, -0.3828340449873522, 1.006774244594166, -0.653729744798845, 0.17466308795182922, 0.43348594118696554, -1.0130134471267023, -0.019037029072354807, -0.054092866199325275, 0.37060766657740934, -0.27673991998178915, 0.14823962850722838, -1.2836509399586284, -0.32392237857949757, 2.2776434990248613, -0.5456799114956917, -0.4069491442013873, 0.3062351397828005, -0.23670394800210873, -0.1554541691717276, 0.11383346453691855, -0.12976092958771973, -0.1903004305562553, -0.30220799075905447, -0.263086763350341, 0.11510452486117077, -0.6518010305697927, 0.2879843197198562, 0.06302107885688664, -0.14100828110029312, 0.17422193646054293, -0.15827694967968872, 0.28014375687230714, -0.27877811596540325, 0.3374147357241263, 0.04493193128698138, 0.44714818398594125, 0.6087849404513052, -1.5519535588076003, 0.05752478329842265, 1.293977312197911, -0.17063291460131916, -0.856825396422138, -0.016406873838165862, 0.2888183707545586, -0.09448848044103113, -0.2971672351071244, -0.09438424359256034, 0.14841365740829401, -0.1708975871010288, -0.37033818342001945, -0.11702150888536211, -0.11702150888536211], "nondurables_z": [0.0, -0.20686442956685885, 1.0460863695650457, -0.4066580271221889, -0.2598334052630229, 0.46638524442759566, -0.5183480913259896, -0.5947635727379996, -0.94702436908604, 0.7877468323698222, 0.7309179123007206, -1.0093944482860733, -0.010491964931728364, -0.33947819937108, -0.17529432864960098, -0.2503984934031815, -0.7895636467102233, -0.6092525424945836, 0.005872351020271762, 0.02387589251099227, 0.1829969375990748, 0.3771306631585393, -0.4733439434278635, 0.494750983289733, -0.31041985484708967, -0.3104609053646907, -0.2504692747581407, 0.5945544505091915, 0.2106086466772351, -0.21878849348820306, 0.7108955181793176, 0.635872862398369, 0.06789204021759826, -1.052448316700667, -1.288155275117122, 1.0092181822458277, 0.44645885785853595, 1.3416843163589613, 0.19711482141604916, -0.8372692795275668, 0.4395316874818129, -0.10975003919534213, 0.8456219311450484, -0.6965400508498721, 1.1025269185304427, -0.6206193145358475, 0.6590662940557456, -0.21797377853898264, -0.08197739055687372, 0.15612526218502346, 0.30109753091532565, 0.9343008034594473, 0.24836760905807312, -0.12808231568793996, -0.1639574980718205, 0.18417626890047695, -0.432125057542127, 0.9161408821873385, -0.6084040980716607, 0.11161339073991386, 0.699884259265127, 1.1669398376848972, 1.3246574000724867, 0.6767974456883628, -2.0158396412334603, -0.22155487977936458, 1.1451886391100712, -0.032098179511216046, -0.6013307031486607, 0.9788904660274641, -0.11100307005218786, -0.032187098949717406, 0.9815508499496143, -0.036472828927608524, -1.1023806294370404, -0.8169523865660431, -0.6528092207147463, 1.5964829662509605, -0.5081728067615695, -0.08931641007122151, 0.776044738408543, -0.22731704683803763, 0.41461806669564116, -0.024666296497329394, 0.3551917500270186, -0.9420341591982501, 0.44853784975723987, -0.19388244653367662, 1.3790992109263343, 0.10730344703223602, -0.36427165472549794, -0.7255995700053041, 0.7185831957087901, 0.027986054562264984, 0.5450163930517518, 1.042646804741227, 0.24556862362343418, -0.8727775465104367, -1.331490819545578, -1.557894105478108, -3.88001306286681, -2.602078264922952, 0.6397381471030014, 0.4487556326668847, -1.0960129504153184, 0.21977982334808913, 0.17099979936233217, 1.0194194545618893, -0.017547270648543698, 0.5307689109204101, 0.0607344158713134, 0.13718102252969333, -0.22481168988640424, 0.09798363570924437, 0.12309532635123949, -0.0852635031847915, -0.235153276984471, 0.07041294044899359, -0.7742874302183196, -0.1751630232450939, -0.1719219040979959, 0.27657817694810694, 0.32230892990828836, 0.34079512858515826, 0.5731903081599297, 0.2717624339013758, 0.5615478986940793, 0.0005048052375678099, 0.7166214183932956, 0.5520241264651302, -0.4178536366398672, 0.1788793789472916, -0.521305929695765, -0.15374619422359684, 0.14052679736051102, -0.24898596656595015, -0.017159381136456434, -0.5561128769272431, 0.5142629056234074, 0.6907452193873657, -0.2789592988975937, -0.2491172383815518, -0.6759342597084038, -1.0175077194707745, -0.28238087741614454, 0.9038025080807739, 0.13625687932886096, 0.12530037425001464, -0.6838100290675482, -0.6327585829182357, 1.1257912677798092, 0.2819486053314279, -1.0097245295358417, -0.9497336061056376, 0.18165981637289294, -0.17238122364468253, 0.3232137005023384, -0.22873670805605284, 0.04637288442201859, -0.09476089988763044, 0.09105706331567717, 0.13288942242736998, -0.3098143122644523, 0.3617654667742134, -0.33227645294754043, 0.6292157066825864, -0.3314516187096885, 0.11863244580555002, 0.05479426008307274, 0.014236645408096674, -0.7806167073463188, 0.1643763430152208, -0.5462308912113852, -0.8480860812860124, -1.6063941236868753, 0.2527015318235274, 0.34956861842681625, -0.49102620802191366, 0.6574418357386209, -0.04943082518884101, 0.30118773687612416, -0.36663460189497354, -0.8527591100306855, -0.6464283055410412, 0.09020247550429773, -0.39031327299082946, -0.6615017768930742, -0.2323849743550832, -0.0735247727843147, 0.384499248935262, 0.09004883373809804, 0.5604888293763939, -0.9485697496879552, -0.09333737000702308, 0.0955404941454759, -0.06951405972484133, -0.27719020816847384, 0.5712582818896674, 0.31620069036977766, -0.08690151413678418, 0.08323447599689511, -0.028760909803736353, -0.8675441982171417, 0.16742935160307962, -0.48131544823509625, 0.44186924127410737, 1.1928399225226882, -0.7040406435730817, 0.5663715903293689, 0.6880589025875882, 0.10353171700581859, -0.2550871779949911, -0.43225538918829803, -0.020874610010377378, 0.5197582843526979, -0.8239020007019151, -0.014555038339702269, -0.1836694573075141, -0.051231604564046795, 0.27603489934553654, 0.20667644989969325, -2.201127427071018, 0.5354128804878487, -0.07673181849490997, 0.7667404458595131, 0.3868407775371966, -0.028847604630325378, -0.11628355427911191, 0.22240162883636924, -0.15183821084139565, -0.7730737874411974, 0.10830691972665732, 0.04012377790642202, 0.12227435130998333, -0.31116285939542143, -0.37708248710072806, 1.5680627133882976, -9.752275653654898, 6.020879069686898, 3.4135836001565703, 0.6701818581827987, -0.47110920177063365, 1.0948030774890736, -0.7625343831364522, -0.4128369143169915, 0.613194245988157, 1.7017362594253311, -1.361913273373171, 4.700248706182378, 0.02181890751268626, -0.19042719819387963, 1.4224637003460592, -1.124919205339211, 0.9979200729054754, 0.15568603824992266, 0.885030833715123, 0.7508592232032953, -0.2874975973038385, 0.13805987159130076, 0.5008801077957714, 1.6667716649580193, -0.28427122382706965, 0.8738039925980797, 1.140754267042758, -1.6158931070434128, -0.41804224057561257, -0.1743920291915337, 0.35906901653994366, -0.5063590586951577, -1.150879458511079, 1.0556268335457302, 0.1609786512548748, -1.186518120596554, 0.49488218213350776, -0.5411045532666117, 0.21076589823120806, -0.0774603524650962, 0.6818377203073769, 0.21594574827888208, -0.1477805359259825, -0.5303584913917867, -0.1438293473027359, -1.0345843643709571, -0.09043231946793208, 0.5869115132604253, 0.04952481935393829, 0.07586615623516763, -0.2001717861982459, 0.17110879342955634, -0.5315420208868324, 0.5098155328878117, -0.361701656411823, -0.26051600770093397, 0.7909434276803615, -0.20154529471835025, 0.174724295425348, -0.503340618135407, -0.3280325911028196, -0.2693343532028508, 0.5375632445904578, -0.1405234193497298, 0.31685374237256975, 0.026088973737623092, -0.2603068220438178, -0.002786738502365383, -0.11288760220911881, -0.3883621377917233, -0.2550871779949911, -0.2550871779949911], "services_z": [0.0, 0.1537764410917915, 0.3780759832969126, 0.027533336358037862, 0.12522974043521756, 0.205328337344786, 0.4512331515486867, -0.4373598061058337, 0.11240011742059178, -0.36041766103546213, 0.0348353177207918, -0.07959766429068889, -0.04708918988938588, 0.11237080802094529, -2.1498853362819683, 1.2736884976711929, 0.005509467134877354, 0.3203870001408283, -0.478468655208368, 0.07138433864298095, -0.040396981744803134, 0.2133972314691762, 0.01877375172722851, -0.15575200193511365, 0.28061598234364876, -0.23730478279434558, -0.10314752854557364, 0.4151084257365732, -0.20795681888529316, 0.08861864627479465, 0.15529272048399131, -0.13136730465220997, 0.15051000686545649, 0.03368519002524253, 0.350675848890748, -0.15343366035748413, 0.20851775794737895, 0.077140248215487, -0.22951710352084717, 0.2307423158218194, 0.018792278405285724, 0.10848585696402362, 0.2622093211589533, 0.1082340770997765, -0.18014735688188166, 0.24294223918859256, -0.056134693707500787, 0.12814734059352384, 0.38864207005994766, 0.012270887732382947, 0.2669057169542398, 0.0906459936292803, 0.21204730638933808, 0.21938700877312567, -0.09795719092841404, 0.20237652935340197, 0.2592743992439473, 0.08871032412499572, 0.10437880709560932, 0.20111892673313875, 0.08962084014764546, -0.025486831597595197, 0.19023978383246723, 0.05743687168744692, 0.277224998973602, -0.026696890914069543, -0.18855903592534334, 0.32576449563135784, 0.2530513783179449, 0.0136605812280374, 0.2663774120591784, -0.0894228587022023, 0.0989691242825827, -0.16616331516757787, 0.19248241097168986, 0.12878428626634827, -0.05837319792442437, 0.004880761233920062, 0.40178914544733646, 0.08804222981632699, -0.20227000313625884, 0.040684939321912375, -0.3119135346258548, 0.12854402005126456, -0.030063593672388398, 0.4833965182297367, -0.17280649894265745, 0.04641867313489761, 0.1576650080838926, -0.04592341508279785, 0.1835675870798586, -0.11455681637305555, 0.031417831511346375, 0.06177854869428086, 0.08711795660195235, 0.012987496946679047, -0.22260300765284424, -0.4820717002411228, -0.18191208757048072, -0.3488474743221354, -0.6406456078203233, -0.5472078381196587, -0.5261374577862401, -0.8102256332642612, -0.4977135869321306, -0.5496498144915912, -0.6170390067724518, -0.1567085535505435, -0.2276013736897119, -0.008508003444648648, -0.29549106875282366, 0.024247404927468564, -0.5029597021365462, 0.3717069965441269, -0.30148127194982943, 0.0802467413390951, -0.19040501759502498, -0.08384929902379136, 0.3033692648201006, -0.18733669039900183, 0.0382764122932031, -0.17279036230553615, -0.4154597849022224, -0.15441870589779924, -0.07654521071116135, -0.12986856866541271, -0.2535568487847841, -0.13401909514304516, 0.11420888550284243, -0.26656766080558186, 0.08494195229289866, -0.23053168006133623, 0.10003506439599795, -0.19365836600936032, -0.36052017323683017, -0.326731283249109, -0.3803121074154439, -0.22128691458428393, 0.12109096774082771, 0.1923264136026853, -0.20300450526188066, -0.06899667040003864, -0.3298882202303106, -0.251288249719472, -0.09997573311395963, -0.45400911652306475, -0.10496566475841963, -0.004533668149396817, -0.04576626757485573, -0.3516583130992142, -0.2552316502672397, -0.1618851048823167, 0.09458157963240649, -0.24996217239901525, -0.14000925484338314, -0.15014332916139825, -0.3580866876448185, 0.06147987224444862, -0.03784922285146862, 0.15819242864238864, 0.13520096459328396, -0.0381520197003662, -0.36860507059594316, -0.34774571233676177, 0.37476476627621047, -0.278438117724586, 0.08584504353487701, -0.028513423722400035, -0.0018004414548385306, 0.3410449027161119, -0.10533065483392061, 0.272547010365763, -0.16104607349988473, -0.002792472581526561, -0.2013473970922706, -0.05880610174616583, -0.2570752210241139, 0.011136734552975107, -0.0387001419592062, -0.08674023018417396, -0.04620822404265758, -0.06217962362362941, -0.20554189403053374, -0.05323033913138034, -0.39879838101386833, -0.0195621299356402, 0.10521868277778632, 0.21148083567173595, -0.465692486492946, 0.12937800669776195, -0.08662552988603857, -0.04757133647208084, 0.09101122305408536, -0.09167648821556067, 0.04257008094215482, -0.3217176504955939, 0.10039658951867692, 0.14279271925325643, 0.08923618342444531, -0.26730664039251373, 0.14529859730913802, -0.3035036316023682, -0.10537480490217278, -0.15714839005555523, 0.004416559667566679, -0.25087294171658037, -0.028242465522076113, 0.0015252307610333282, 0.050934149268456, 0.37181098564736204, -0.08540668502260572, -0.1652607933146683, 0.35693288964066433, 0.004464724168033833, -0.24539087240402008, 0.22280558303697853, -0.10012099392779493, -0.07549560298746273, -0.3361009183051811, 0.06760110799911045, -0.14196380905641365, -0.2840294117380859, -0.35793336088978295, -0.17585200207112142, 0.19955362085506717, -0.16325151110541314, -0.15346801797170284, 0.03695926995899947, 0.21900289738500853, 0.1492941720601773, 0.002074498495188771, -0.07291837459879445, 0.15110578756927726, 0.04103559766963586, 0.6364857108642576, -0.7717507682667858, -9.283805366878555, -11.347511147574865, 5.056166470266344, 5.267381000626959, 1.3066607721681125, 1.1038642571873378, 1.1156173124499786, 0.3369521913775386, -0.50655182512287, 0.04729219838274956, 0.6994061875287183, -0.2279143618919026, 2.1360633306271777, 1.1214626553463312, 0.8295869984301908, 1.0987869926597675, 1.0161535071029215, 0.5753543747628536, 0.16671138813946265, 0.38601156481651144, 0.36217801026860724, 0.12055289603482885, -0.26455127861265126, 0.5633339389732455, 0.7326623251661425, 0.5708344944325667, 0.3068463655572887, 0.4781198764235656, 0.30766868086152677, 0.6661790239480069, 0.28473713523554184, 0.16450547160708137, 0.28696171589536446, 0.1505391752566001, 0.6100211922607801, -0.022452213938804325, 0.37390548793651324, 0.039893314016696546, -0.048226478006278335, 0.2805864573242921, 0.2854911646390039, -0.25488899713804797, 0.17358969260828114, 0.114727056416981, 0.32084423178941635, 0.2419848445099507, 0.32328118978122605, 0.42755819868032113, 0.188651812340733, 0.10744866530897955, 0.007849040664110022, 0.23304655974173566, 0.007902639892749204, 0.15909737077182096, 0.14399029773599517, 0.12911523754292628, -0.038932749060626895, 0.27849229764959976, -0.11841398015036769, -0.25542883021465995, 0.2056038832858321, 0.09403082952962663, 0.0063919525572415925, 0.026004515494578603, 0.3325098366758069, 0.16375035428696913, 0.10447363883303905, 0.16866509174402997, -0.13099094290596394, 0.20304449152384718, 0.3084047055262077, -0.4169181359285787, -0.4169181359285787], "divergence_6m": [-0.2519954801301337, -0.1444814577288986, -0.0981228041463351, -0.2132436530389692, -0.1685162679942545, -0.3167050949282189, -0.5107556856483471, -0.5657472398903823, -0.3159240711445963, -0.3938825467427911, -0.394649900779131, -0.0625916384735027, 0.0937624859273827, 0.1395795229732907, 0.0319200676963033, -0.2722435078670489, -0.1774224089599628, 0.0478283653919248, 0.1841365299659597, 0.1381082148065304, 0.3302092237102317, 0.5202907278068668, 0.5863134540324744, 0.1690117795483167, -0.2088365789652272, -0.1176224375139807, -0.2499289872570298, -0.3001018936687604, -0.4013776090468886, -0.2194758121802842, -0.1357366940163789, -0.1712339966576426, -0.3788901016618997, 0.1787208018126726, 0.2844706151937812, 0.1349278937556366, 0.2512917516296264, 0.114602012598162, 0.2727153821054679, 0.0344711834539014, -0.1170437532899288, -0.0289775526248656, 0.2965673362915254, 0.2044649028027984, 0.1928597896951663, 0.0894736371431104, -0.1971004818855613, 0.1062961972640745, -0.2598740811848709, -0.0155120244095444, -0.1308899478364218, -0.2472549294793561, -0.0400769468801738, -0.2258572229873929, -0.1467093718260051, -0.2123371384481427, -0.1473288297151926, -0.266735787672886, -0.2302378150534528, -0.0924580623908915, -0.2174210475215998, -0.2840249563671425, -0.6614245087613053, -0.5306742417321508, -0.2317564761167033, -0.0967143268887277, -0.1004574233799167, -0.0670479084443748, 0.4417364230182016, 0.4628806086431726, -0.1715982272699102, -0.3008636068062174, -0.2829026971451721, -0.1866114930119637, -0.1308914783000767, 0.2748886460832838, 0.566892365761612, 0.237076177815635, 0.4715572967475051, 0.3474232681959628, 0.1102964363726229, -0.240949510897657, -0.2089565070355243, -0.185832911884901, -0.1650792458642308, -0.2551606137288841, -0.1595445131838246, -0.2127844168365631, -0.4775160007291451, -0.3924913451278558, -0.4222091465183611, -0.381769574014063, -0.4466144743809773, -0.6480025262113923, -0.5851493363459396, -0.7884721200731389, -0.6096901682744752, -0.2416586146863479, 0.3315215103588795, 0.268810518865035, 0.607845076667658, 1.2505204088307, 0.9763080213424814, 0.6714659810443603, 0.3697410095601919, 1.188969362791174, 1.2129940969306772, 0.818437671252517, 0.5807737860032801, 0.5858637265539862, 0.9239049706906822, 0.3234154553381571, 0.039847046439601, 0.1666552705025854, 0.4946004962511076, 0.6030271581285055, 0.0353728945222914, 0.1323918433013203, 0.2958965235705904, 0.2401563925507039, -0.2096869250421939, -0.1306770303041563, -0.0950376361176978, -0.108961968290833, -0.0220796394325366, -0.0229458322273399, 0.278233690035481, 0.3824713579668575, -0.0578015377481855, 0.1072032844329189, 0.1687548866215112, -0.0415422211364043, -0.3438751670873436, -0.8342172170334671, -0.1834062202986309, -0.2009041081901783, -0.2272821789760379, 0.1920511451627891, 0.6748036581690401, 0.9549160512431462, 0.8308471089016288, 0.7672110028381148, 0.7601966572514938, 0.2805821979035404, 0.1014840054605371, 0.2452715936404463, 0.3105413002147894, 0.4562644918209306, 0.2734037675567632, 0.1217482092396647, 0.1346832626207102, 0.2083505224967189, 0.1558446429558972, -0.0341667208872885, 0.2795593292246486, 0.5912903569881846, 0.6499758926262753, 0.3976267631645716, 0.1384342933589847, -0.0262236425944675, -0.2960377218688138, 0.0017663551036016, -0.022962072073347, 0.0653946763901273, 0.1137069263610203, 0.449379020535716, 0.3216747490609875, 0.0196943895983363, -0.0335222276669594, -0.0481224999230172, 0.1897220517659812, 0.0762519185187151, 0.2539111165489386, 0.44879628484363, 0.7106087987794342, 0.6421652894227544, 0.4253390355964841, 0.4898712566903707, 0.2037695359381666, 0.1947738361701891, -0.1507291695582112, -0.0823156446997257, -0.0715693567464525, -0.0375020017941798, 0.2157907636602043, 0.0859041976056297, 0.1989527135705528, 0.1719730195582338, 0.3109535373490306, 0.0684860136823891, 0.2010724484537699, 0.0607819877428915, -0.0301385762438994, 0.0297084595950993, 0.0065990537929133, 0.0087441021034657, 0.062712698682483, 0.2007717107467868, 0.2836621727927233, 0.2325567587047462, 0.2145619227228473, 0.338403019375709, 0.1440203891997105, 0.0126478230041683, -0.0224633770333401, 0.1453074988138044, -0.0074779627767905, 0.1645900194363019, -0.0074895920507846, -0.1024648918634135, -0.0560368688369902, -0.0434172217159651, 0.1411149967173644, -0.1266291080874476, -0.0530143692535225, 0.1468200686644899, 0.1367359885386473, -0.0429850494874773, 0.0841693623370818, 0.0945570102523342, 0.0722383382787723, 0.2404042464705748, 0.0472549977350862, 0.1913155076772117, 0.0770992748708647, 0.1125226545777116, 0.2507317417222235, -0.0085965214203021, 0.1553116494810693, -0.2204164424879867, -0.1444097526661685, -0.0180044537013913, -0.0938055028423996, 0.0294093110858823, 0.0341762536725116, 0.4386187628386097, 1.0681482258411017, 2.195253583919483, 0.9710359487285748, 0.30619784253859, -0.1086185737925498, -0.2880643333369265, -0.9628483366283984, -2.1440345288303835, -1.0144224720399542, -0.3388833002711041, -0.1658803133018546, -0.0552268416166919, -0.5237073120060382, -0.6000046398474328, -0.6835691013733062, -0.8219703890533651, -0.6929957343943913, -1.2668045660762852, -0.7977792590518865, -0.9588389500308048, -1.0357124499223334, -0.81423636917051, -0.8561585851147694, -0.5884279535600655, -1.0015291423265535, -0.5915789937579978, -0.6635632690826392, -1.3548502150642754, -1.0408005566995844, -0.4833339840515616, -0.149309751922843, -0.3472451485861265, -0.1195650842139188, 0.6237222498605616, 0.5174886372603088, 0.3134441303487102, 0.1164897592195186, 0.1311079224589692, 0.0501529541417818, 0.0672967469380884, 0.3443269720597903, 0.1440149851175817, 0.2402970594202475, 0.0344004501747907, 0.1001626303407474, 0.2513351228173042, 0.3858363119858666, 0.3360019834383351, 0.471324701434291, 0.5480669690252055, 0.3358415088495705, -0.0946553692175409, -0.6368501012125978, -0.4157470568538327, -0.4215935114716516, -0.3159430126676108, 0.0572578761687955, 0.1022736188670284, 0.2094199290393579, -0.1521893070981202, -0.6132468634875877, -0.8684070701245835, -0.862778763956165, -0.4005578136743381, -0.4010767859642212, -0.3214288995849427, -0.0600570833563093, 0.0949404859395964, -0.0964474940441666, -0.4545716671845696, -0.2620272257118688, 0.0033455491713205, 0.2196140875606737], "total_q1": [1495.0, 1495.0, 1495.0, 1495.0, 1495.0, 1495.0, 1573.5833333333333, 1573.5833333333333, 1573.5833333333333, 1573.5833333333333, 1573.5833333333333, 1573.5833333333333, 1573.5833333333333, 1573.5833333333333, 1573.5833333333333, 1573.5833333333333, 1573.5833333333333, 1573.5833333333333, 1588.4166666666667, 1588.4166666666667, 1588.4166666666667, 1588.4166666666667, 1588.4166666666667, 1588.4166666666667, 1588.4166666666667, 1588.4166666666667, 1588.4166666666667, 1588.4166666666667, 1588.4166666666667, 1588.4166666666667, 1541.0, 1541.0, 1541.0, 1541.0, 1541.0, 1541.0, 1541.0, 1541.0, 1541.0, 1541.0, 1541.0, 1541.0, 1486.4166666666667, 1486.4166666666667, 1486.4166666666667, 1486.4166666666667, 1486.4166666666667, 1486.4166666666667, 1486.4166666666667, 1486.4166666666667, 1486.4166666666667, 1486.4166666666667, 1486.4166666666667, 1486.4166666666667, 1593.3333333333333, 1593.3333333333333, 1593.3333333333333, 1593.3333333333333, 1593.3333333333333, 1593.3333333333333, 1593.3333333333333, 1593.3333333333333, 1593.3333333333333, 1593.3333333333333, 1593.3333333333333, 1593.3333333333333, 1700.8333333333333, 1700.8333333333333, 1700.8333333333333, 1700.8333333333333, 1700.8333333333333, 1700.8333333333333, 1700.8333333333333, 1700.8333333333333, 1700.8333333333333, 1700.8333333333333, 1700.8333333333333, 1700.8333333333333, 1705.9166666666667, 1705.9166666666667, 1705.9166666666667, 1705.9166666666667, 1705.9166666666667, 1705.9166666666667, 1705.9166666666667, 1705.9166666666667, 1705.9166666666667, 1705.9166666666667, 1705.9166666666667, 1705.9166666666667, 1858.6666666666667, 1858.6666666666667, 1858.6666666666667, 1858.6666666666667, 1858.6666666666667, 1858.6666666666667, 1858.6666666666667, 1858.6666666666667, 1858.6666666666667, 1858.6666666666667, 1858.6666666666667, 1858.6666666666667, 1800.9166666666667, 1800.9166666666667, 1800.9166666666667, 1800.9166666666667, 1800.9166666666667, 1800.9166666666667, 1800.9166666666667, 1800.9166666666667, 1800.9166666666667, 1800.9166666666667, 1800.9166666666667, 1800.9166666666667, 1746.0833333333333, 1746.0833333333333, 1746.0833333333333, 1746.0833333333333, 1746.0833333333333, 1746.0833333333333, 1746.0833333333333, 1746.0833333333333, 1746.0833333333333, 1746.0833333333333, 1746.0833333333333, 1746.0833333333333, 1833.4166666666667, 1833.4166666666667, 1833.4166666666667, 1833.4166666666667, 1833.4166666666667, 1833.4166666666667, 1833.4166666666667, 1833.4166666666667, 1833.4166666666667, 1833.4166666666667, 1833.4166666666667, 1833.4166666666667, 1846.1666666666667, 1846.1666666666667, 1846.1666666666667, 1846.1666666666667, 1846.1666666666667, 1846.1666666666667, 1846.1666666666667, 1846.1666666666667, 1846.1666666666667, 1846.1666666666667, 1846.1666666666667, 1846.1666666666667, 1866.0833333333333, 1866.0833333333333, 1866.0833333333333, 1866.0833333333333, 1866.0833333333333, 1866.0833333333333, 1866.0833333333333, 1866.0833333333333, 1866.0833333333333, 1866.0833333333333, 1866.0833333333333, 1866.0833333333333, 1976.0833333333333, 1976.0833333333333, 1976.0833333333333, 1976.0833333333333, 1976.0833333333333, 1976.0833333333333, 1976.0833333333333, 1976.0833333333333, 1976.0833333333333, 1976.0833333333333, 1976.0833333333333, 1976.0833333333333, 2039.1666666666667, 2039.1666666666667, 2039.1666666666667, 2039.1666666666667, 2039.1666666666667, 2039.1666666666667, 2039.1666666666667, 2039.1666666666667, 2039.1666666666667, 2039.1666666666667, 2039.1666666666667, 2039.1666666666667, 2094.833333333333, 2094.833333333333, 2094.833333333333, 2094.833333333333, 2094.833333333333, 2094.833333333333, 2094.833333333333, 2094.833333333333, 2094.833333333333, 2094.833333333333, 2094.833333333333, 2094.833333333333, 2168.25, 2168.25, 2168.25, 2168.25, 2168.25, 2168.25, 2168.25, 2168.25, 2168.25, 2168.25, 2168.25, 2168.25, 2199.9166666666665, 2199.9166666666665, 2199.9166666666665, 2199.9166666666665, 2199.9166666666665, 2199.9166666666665, 2199.9166666666665, 2199.9166666666665, 2199.9166666666665, 2199.9166666666665, 2199.9166666666665, 2199.9166666666665, 2389.333333333333, 2389.333333333333, 2389.333333333333, 2389.333333333333, 2389.333333333333, 2389.333333333333, 2389.333333333333, 2389.333333333333, 2389.333333333333, 2389.333333333333, 2389.333333333333, 2389.333333333333, 2394.333333333333, 2394.333333333333, 2394.333333333333, 2394.333333333333, 2394.333333333333, 2394.333333333333, 2394.333333333333, 2394.333333333333, 2394.333333333333, 2394.333333333333, 2394.333333333333, 2394.333333333333, 2572.4166666666665, 2572.4166666666665, 2572.4166666666665, 2572.4166666666665, 2572.4166666666665, 2572.4166666666665, 2572.4166666666665, 2572.4166666666665, 2572.4166666666665, 2572.4166666666665, 2572.4166666666665, 2572.4166666666665, 2718.1666666666665, 2718.1666666666665, 2718.1666666666665, 2718.1666666666665, 2718.1666666666665, 2718.1666666666665, 2718.1666666666665, 2718.1666666666665, 2718.1666666666665, 2718.1666666666665, 2718.1666666666665, 2718.1666666666665, 2814.6666666666665, 2814.6666666666665, 2814.6666666666665, 2814.6666666666665, 2814.6666666666665, 2814.6666666666665, 2814.6666666666665, 2814.6666666666665, 2814.6666666666665, 2814.6666666666665, 2814.6666666666665, 2814.6666666666665, 2920.5, 2920.5, 2920.5, 2920.5, 2920.5, 2920.5, 2920.5, 2920.5, 2920.5, 2920.5, 2920.5, 2920.5, 2920.5, 2920.5, 2920.5, 2920.5, 2920.5, 2920.5, 2920.5, 2920.5, 2920.5, 2920.5, 2920.5, 2920.5, 2920.5, 2920.5, 2920.5], "total_q5": [6258.5, 6258.5, 6258.5, 6258.5, 6258.5, 6258.5, 6427.083333333333, 6427.083333333333, 6427.083333333333, 6427.083333333333, 6427.083333333333, 6427.083333333333, 6427.083333333333, 6427.083333333333, 6427.083333333333, 6427.083333333333, 6427.083333333333, 6427.083333333333, 6599.916666666667, 6599.916666666667, 6599.916666666667, 6599.916666666667, 6599.916666666667, 6599.916666666667, 6599.916666666667, 6599.916666666667, 6599.916666666667, 6599.916666666667, 6599.916666666667, 6599.916666666667, 6810.916666666667, 6810.916666666667, 6810.916666666667, 6810.916666666667, 6810.916666666667, 6810.916666666667, 6810.916666666667, 6810.916666666667, 6810.916666666667, 6810.916666666667, 6810.916666666667, 6810.916666666667, 6975.833333333333, 6975.833333333333, 6975.833333333333, 6975.833333333333, 6975.833333333333, 6975.833333333333, 6975.833333333333, 6975.833333333333, 6975.833333333333, 6975.833333333333, 6975.833333333333, 6975.833333333333, 7539.083333333333, 7539.083333333333, 7539.083333333333, 7539.083333333333, 7539.083333333333, 7539.083333333333, 7539.083333333333, 7539.083333333333, 7539.083333333333, 7539.083333333333, 7539.083333333333, 7539.083333333333, 7845.833333333333, 7845.833333333333, 7845.833333333333, 7845.833333333333, 7845.833333333333, 7845.833333333333, 7845.833333333333, 7845.833333333333, 7845.833333333333, 7845.833333333333, 7845.833333333333, 7845.833333333333, 8062.666666666667, 8062.666666666667, 8062.666666666667, 8062.666666666667, 8062.666666666667, 8062.666666666667, 8062.666666666667, 8062.666666666667, 8062.666666666667, 8062.666666666667, 8062.666666666667, 8062.666666666667, 8083.583333333333, 8083.583333333333, 8083.583333333333, 8083.583333333333, 8083.583333333333, 8083.583333333333, 8083.583333333333, 8083.583333333333, 8083.583333333333, 8083.583333333333, 8083.583333333333, 8083.583333333333, 7853.666666666667, 7853.666666666667, 7853.666666666667, 7853.666666666667, 7853.666666666667, 7853.666666666667, 7853.666666666667, 7853.666666666667, 7853.666666666667, 7853.666666666667, 7853.666666666667, 7853.666666666667, 7739.166666666667, 7739.166666666667, 7739.166666666667, 7739.166666666667, 7739.166666666667, 7739.166666666667, 7739.166666666667, 7739.166666666667, 7739.166666666667, 7739.166666666667, 7739.166666666667, 7739.166666666667, 7879.25, 7879.25, 7879.25, 7879.25, 7879.25, 7879.25, 7879.25, 7879.25, 7879.25, 7879.25, 7879.25, 7879.25, 8280.666666666666, 8280.666666666666, 8280.666666666666, 8280.666666666666, 8280.666666666666, 8280.666666666666, 8280.666666666666, 8280.666666666666, 8280.666666666666, 8280.666666666666, 8280.666666666666, 8280.666666666666, 8269.75, 8269.75, 8269.75, 8269.75, 8269.75, 8269.75, 8269.75, 8269.75, 8269.75, 8269.75, 8269.75, 8269.75, 8696.916666666666, 8696.916666666666, 8696.916666666666, 8696.916666666666, 8696.916666666666, 8696.916666666666, 8696.916666666666, 8696.916666666666, 8696.916666666666, 8696.916666666666, 8696.916666666666, 8696.916666666666, 9209.0, 9209.0, 9209.0, 9209.0, 9209.0, 9209.0, 9209.0, 9209.0, 9209.0, 9209.0, 9209.0, 9209.0, 9351.75, 9351.75, 9351.75, 9351.75, 9351.75, 9351.75, 9351.75, 9351.75, 9351.75, 9351.75, 9351.75, 9351.75, 9749.0, 9749.0, 9749.0, 9749.0, 9749.0, 9749.0, 9749.0, 9749.0, 9749.0, 9749.0, 9749.0, 9749.0, 9898.416666666666, 9898.416666666666, 9898.416666666666, 9898.416666666666, 9898.416666666666, 9898.416666666666, 9898.416666666666, 9898.416666666666, 9898.416666666666, 9898.416666666666, 9898.416666666666, 9898.416666666666, 10130.916666666666, 10130.916666666666, 10130.916666666666, 10130.916666666666, 10130.916666666666, 10130.916666666666, 10130.916666666666, 10130.916666666666, 10130.916666666666, 10130.916666666666, 10130.916666666666, 10130.916666666666, 9569.916666666666, 9569.916666666666, 9569.916666666666, 9569.916666666666, 9569.916666666666, 9569.916666666666, 9569.916666666666, 9569.916666666666, 9569.916666666666, 9569.916666666666, 9569.916666666666, 9569.916666666666, 10684.416666666666, 10684.416666666666, 10684.416666666666, 10684.416666666666, 10684.416666666666, 10684.416666666666, 10684.416666666666, 10684.416666666666, 10684.416666666666, 10684.416666666666, 10684.416666666666, 10684.416666666666, 11721.416666666666, 11721.416666666666, 11721.416666666666, 11721.416666666666, 11721.416666666666, 11721.416666666666, 11721.416666666666, 11721.416666666666, 11721.416666666666, 11721.416666666666, 11721.416666666666, 11721.416666666666, 12507.75, 12507.75, 12507.75, 12507.75, 12507.75, 12507.75, 12507.75, 12507.75, 12507.75, 12507.75, 12507.75, 12507.75, 12528.5, 12528.5, 12528.5, 12528.5, 12528.5, 12528.5, 12528.5, 12528.5, 12528.5, 12528.5, 12528.5, 12528.5, 12528.5, 12528.5, 12528.5, 12528.5, 12528.5, 12528.5, 12528.5, 12528.5, 12528.5, 12528.5, 12528.5, 12528.5, 12528.5, 12528.5, 12528.5]};
+const R = {"cats": ["Food", "Housing", "Apparel", "Transport", "Healthcare", "Total"], "vals": [3.090032739177883, 3.0236215065577148, 3.4448398576512456, 4.971204701273262, 2.8362844702467345, 4.28984762883068]};
+
+/* ── Shared Plotly config ── */
+const CFG = {displayModeBar:false,responsive:true};
+
+const FONT = {family:"Inter,system-ui,sans-serif",size:11.5,color:"#64748b"};
+
+const BASE = {
+  paper_bgcolor:"rgba(0,0,0,0)",
+  plot_bgcolor:"rgba(0,0,0,0)",
+  font:FONT,
+  xaxis:{
+    gridcolor:"#f1f5f9",
+    linecolor:"#e2e8f0",
+    tickfont:{color:"#94a3b8",size:11,family:"Inter,sans-serif"},
+    zeroline:false
+  },
+  yaxis:{
+    gridcolor:"#f1f5f9",
+    linecolor:"#e2e8f0",
+    tickfont:{color:"#94a3b8",size:11,family:"Inter,sans-serif"},
+    zeroline:false
+  },
+  margin:{l:60,r:64,t:16,b:48},
+  hovermode:"x unified",
+  hoverlabel:{
+    bgcolor:"#0f172a",
+    bordercolor:"#334155",
+    font:{family:"Inter,sans-serif",color:"#f8fafc",size:12}
+  },
+  legend:{
+    orientation:"h",y:1.09,x:0,
+    font:{color:"#64748b",size:11,family:"Inter,sans-serif"},
+    bgcolor:"rgba(0,0,0,0)",
+    borderwidth:0
+  }
+};
+
+/* ── Chart 1: Sentiment vs PCE ── */
+function buildP1(){
+  let shapes=[];
+  let inRec=false, recStart=null;
+  for(let i=0;i<D.recession.length;i++){
+    if(D.recession[i]===1&&!inRec){inRec=true;recStart=D.dates[i];}
+    if(D.recession[i]===0&&inRec){
+      shapes.push({
+        type:"rect",xref:"x",yref:"paper",
+        x0:recStart,x1:D.dates[i],y0:0,y1:1,
+        fillcolor:"rgba(15,23,42,0.04)",
+        line:{width:0}
+      });
+      inRec=false;
+    }
+  }
+
+  const events=[
+    {date:"2008-09-01",label:"2008 Crisis"},
+    {date:"2020-03-01",label:"COVID-19"},
+    {date:"2022-03-01",label:"Inflation Surge"},
+    {date:"2025-01-01",label:"Tariff Uncertainty"},
+  ];
+  let annotations=events.map(e=>{
+    let idx=D.dates.indexOf(e.date);
+    let yval=idx>=0?D.sentiment[idx]:80;
+    return {
+      x:e.date,y:yval,xref:"x",yref:"y",
+      text:e.label,showarrow:true,arrowhead:0,
+      arrowcolor:"#cbd5e1",ax:0,ay:-38,
+      bgcolor:"#ffffff",bordercolor:"#e2e8f0",
+      borderpad:5,
+      font:{color:"#475569",size:10.5,family:"Inter,sans-serif"},
+      borderwidth:1,
+      borderradius:4
+    };
+  });
+
+  Plotly.newPlot("ch1",[
+    {
+      x:D.dates,y:D.sentiment,
+      name:"Sentiment Index",
+      line:{color:"#2563eb",width:2.5},
+      yaxis:"y",type:"scatter",mode:"lines",
+      hovertemplate:"<b>Sentiment:</b> %{y:.1f}<extra></extra>"
+    },
+    {
+      x:D.dates,y:D.pce_total,
+      name:"PCE Total ($B)",
+      line:{color:"#059669",width:2.5},
+      yaxis:"y2",type:"scatter",mode:"lines",
+      hovertemplate:"<b>PCE:</b> $%{y:,.0f}B<extra></extra>"
+    },
+  ],{
+    ...BASE,
+    shapes,
+    annotations,
+    yaxis:{
+      ...BASE.yaxis,
+      title:{text:"Sentiment Index",font:{color:"#2563eb",size:11,family:"Inter,sans-serif"}},
+      range:[40,125],
+      tickfont:{color:"#2563eb",size:11}
+    },
+    yaxis2:{
+      overlaying:"y",side:"right",
+      title:{text:"PCE Spending ($B)",font:{color:"#059669",size:11,family:"Inter,sans-serif"}},
+      gridcolor:"rgba(0,0,0,0)",
+      range:[5000,23000],
+      tickfont:{color:"#059669",size:11,family:"Inter,sans-serif"},
+      tickformat:"$,.0f",
+      zeroline:false
+    },
+  },CFG);
+}
+
+/* ── Chart 2: Z-Score Breakdown ── */
+function buildP2(){
+  Plotly.newPlot("ch2",[
+    {
+      x:D.dates,y:D.sentiment_z,
+      name:"Sentiment Z-Score",
+      line:{color:"#94a3b8",width:1.5,dash:"dot"},
+      type:"scatter",mode:"lines",
+      hovertemplate:"<b>Sentiment Z:</b> %{y:.2f}<extra></extra>"
+    },
+    {
+      x:D.dates,y:D.durables_z,
+      name:"Durable Goods Z",
+      line:{color:"#f97316",width:2.5},
+      type:"scatter",mode:"lines",
+      hovertemplate:"<b>Durables Z:</b> %{y:.2f}<extra></extra>"
+    },
+    {
+      x:D.dates,y:D.nondurables_z,
+      name:"Non-Durable Goods Z",
+      line:{color:"#8b5cf6",width:2.5},
+      type:"scatter",mode:"lines",
+      hovertemplate:"<b>Non-Durables Z:</b> %{y:.2f}<extra></extra>"
+    },
+    {
+      x:D.dates,y:D.services_z,
+      name:"Services Z",
+      line:{color:"#059669",width:2.5},
+      type:"scatter",mode:"lines",
+      hovertemplate:"<b>Services Z:</b> %{y:.2f}<extra></extra>"
+    },
+  ],{
+    ...BASE,
+    yaxis:{
+      ...BASE.yaxis,
+      title:{text:"Standard Deviations from Average (Z-Score)",font:{color:"#64748b",size:11}},
+      range:[-4,4],
+      zeroline:true,
+      zerolinecolor:"#cbd5e1",
+      zerolinewidth:1.5
+    },
+    shapes:[{
+      type:"line",xref:"paper",yref:"y",
+      x0:0,x1:1,y0:0,y1:0,
+      line:{color:"#cbd5e1",width:1.5,dash:"solid"}
+    }]
+  },CFG);
+}
+
+/* ── Chart 3a: Quintile Spending Over Time ── */
+function buildP3a(){
+  Plotly.newPlot("ch3a",[
+    {
+      x:D.dates,y:D.total_q5,
+      name:"Top 20% (Q5)",
+      fill:"tozeroy",
+      fillcolor:"rgba(37,99,235,0.12)",
+      line:{color:"#2563eb",width:2.5},
+      type:"scatter",mode:"lines",
+      hovertemplate:"<b>Top 20%:</b> $%{y:,.0f}/mo<extra></extra>"
+    },
+    {
+      x:D.dates,y:D.total_q1,
+      name:"Bottom 20% (Q1)",
+      fill:"tozeroy",
+      fillcolor:"rgba(220,38,38,0.12)",
+      line:{color:"#dc2626",width:2.5},
+      type:"scatter",mode:"lines",
+      hovertemplate:"<b>Bottom 20%:</b> $%{y:,.0f}/mo<extra></extra>"
+    },
+  ],{
+    ...BASE,
+    yaxis:{
+      ...BASE.yaxis,
+      title:{text:"Monthly Household Spending ($)",font:{color:"#64748b",size:11}},
+      range:[0,14000],
+      tickformat:"$,.0f"
+    },
+  },CFG);
+}
+
+/* ── Chart 3b: Gap Ratio by Category ── */
+function buildP3b(){
+  const palette=[
+    "#3b82f6","#0ea5e9","#8b5cf6","#f97316","#ef4444","#2563eb"
+  ];
+  Plotly.newPlot("ch3b",[{
+    x:R.cats,
+    y:R.vals,
+    type:"bar",
+    marker:{
+      color:palette,
+      line:{color:"rgba(0,0,0,0)",width:0}
+    },
+    text:R.vals.map(r=>r.toFixed(2)+"x"),
+    textposition:"outside",
+    textfont:{color:"#334155",size:13,family:"Inter,sans-serif",bold:true},
+    cliponaxis:false,
+    width:0.52,
+    hovertemplate:"<b>%{x}</b><br>Spending ratio: %{y:.2f}x<extra></extra>"
+  }],{
+    ...BASE,
+    xaxis:{
+      ...BASE.xaxis,
+      type:"category",
+      tickfont:{color:"#475569",size:12,family:"Inter,sans-serif"}
+    },
+    yaxis:{
+      ...BASE.yaxis,
+      title:{text:"Spending Ratio (Top 20% / Bottom 20%)",font:{color:"#64748b",size:11}},
+      range:[0,6.5],
+      ticksuffix:"x"
+    },
+    bargap:0.35,
+    margin:{l:70,r:40,t:30,b:55},
+    shapes:[{
+      type:"line",xref:"paper",yref:"y",
+      x0:0,x1:1,y0:1,y1:1,
+      line:{color:"#e2e8f0",width:1,dash:"dot"}
+    }]
+  },CFG);
+}
+
+buildP1();
+buildP2();
+buildP3a();
+buildP3b();
+
+function go(id,btn){
+  document.querySelectorAll(".pg").forEach(p=>p.classList.remove("on"));
+  document.querySelectorAll(".tab").forEach(t=>t.classList.remove("on"));
+  document.getElementById(id).classList.add("on");
+  btn.classList.add("on");
+  window.dispatchEvent(new Event("resize"));
+}
+</script>
+</body>
+</html>
